@@ -10,11 +10,13 @@ iniziali e un repository Git separato (commit iniziale `72ffad1`).
 TASK-001 completa le convenzioni senza modificare lo scaffold o le dipendenze.
 Il bootstrap conforme al prodotto resta in TASK-005: mancano prerender statico,
 strict TypeScript completo, UI italiana e struttura applicativa prevista.
-La baseline da configurare nei task successivi è Node 24 LTS.
+La baseline richiesta dal proprietario è Node esatto 24.16.0 (ADR-016).
 
 ## Comandi dello scaffold esistente
 
-Dalla cartella frontend, con Node 24 (verificati i test con 24.16.0):
+Dalla cartella frontend, selezionare Node 24.16.0 tramite `nvm use`
+(`.nvmrc`); npm richiesto 11.13.0. Le versioni sono dichiarate anche in `engines`
+e controllate da `.npmrc` (`engine-strict=true`).
 
 ```sh
 # Installazione da lockfile: comando disponibile, non rieseguito in TASK-001.
@@ -26,14 +28,20 @@ npm start
 # Due test dello scaffold; non testano ancora funzionalità del prodotto.
 npm test -- --watch=false
 
-# Build dello scaffold: disponibile, ma non ancora validata in questo ambiente.
+# Build di produzione dello scaffold, verificata con Node 24.16.0.
 npm run build
 ```
 
 La shell di questa macchina seleziona normalmente Node 22.16.0, rifiutato dal
-CLI installato: selezionare Node 24 prima di eseguire i comandi. La build tentata
-con Node 24.16.0 termina con codice 134 senza diagnostica sufficiente; la causa
-resta da verificare nel bootstrap. Non è presente uno script lint.
+CLI installato: selezionare Node 24.16.0 prima di eseguire i comandi.
+Non è presente uno script lint.
+
+Gli script npm passano da `tools/ng.mjs`: su macOS ARM64 seleziona la cache
+SQLite già integrata in Angular al posto di LMDB, che in questo ambiente
+termina con SIGABRT (134) durante la chiusura della cache nativa. La cache
+rimane attiva e non servono flag CI o modifiche alla telemetria. Gli argomenti
+del CLI vengono inoltrati normalmente. Un valore esplicito di
+`NG_BUILD_CACHE_STORE` prevale sulla selezione automatica.
 Prerender statico e proxy API sono **NON ANCORA CONFIGURATI** (TASK-005/009).
 
 ## Convenzioni e documentazione
