@@ -42,3 +42,43 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Ambiente, credenziali e chiavi locali
+.env
+.env.*
+!.env.example
+!.env.*.example
+secrets/
+credentials/
+.aws/
+credentials.json
+service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Dati locali, database, dump e backup
+data/
+local-data/
+pgdata/
+backups/
+*.dump
+*.backup
+*.sql.gz
+*.sql.gpg
+*.dump.gpg
+*.db
+*.sqlite
+*.sqlite3
+/dump.sql
+/dump-*.sql
+
+# Artefatti di test e runtime
+playwright-report/
+test-results/
+*.tsbuildinfo
+*.log
+*.pid
