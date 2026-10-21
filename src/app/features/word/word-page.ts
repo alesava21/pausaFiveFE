@@ -1,4 +1,14 @@
-import { Component, DestroyRef, afterNextRender, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  afterRenderEffect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { finalize, switchMap } from 'rxjs';
@@ -26,10 +36,16 @@ export class WordPage {
   readonly emptyRows = [0, 1, 2, 3, 4, 5];
   readonly columns = [0, 1, 2, 3, 4];
   readonly keyboard = ['QWERTYUIOP'.split(''), 'ASDFGHJKL'.split(''), 'ZXCVBNM⌫'.split('')];
+  private readonly guessInput = viewChild<ElementRef<HTMLInputElement>>('guessInput');
   private readonly client = inject(WordClient);
   private readonly destroy = inject(DestroyRef);
 
   constructor() {
+    afterRenderEffect(() => {
+      const input = this.guessInput()?.nativeElement;
+      if (this.ready() && !this.busy() && !this.pending() && input)
+        input.focus({ preventScroll: true });
+    });
     afterNextRender(() => {
       this.ready.set(true);
       this.open();

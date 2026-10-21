@@ -46,6 +46,7 @@ describe('Parola segreta con autorità server', () => {
     expect(fixture.componentInstance.game()?.sessionId).toBe(active.sessionId);
     expect(fixture.nativeElement.textContent).not.toContain('La parola era');
     expect(fixture.nativeElement.querySelectorAll('.tile')).toHaveLength(30);
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#word-guess'));
     TestBed.inject(HttpTestingController).expectNone((request) =>
       /assets|dictionary/.test(request.url),
     );
@@ -75,6 +76,7 @@ describe('Parola segreta con autorità server', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     expect(fixture.componentInstance.guess).toBe('libro');
+    expect(document.activeElement).toBe(input);
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     const http = TestBed.inject(HttpTestingController);
     const request = http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`);
@@ -92,6 +94,13 @@ describe('Parola segreta con autorità server', () => {
       fixture.nativeElement.querySelectorAll('.word-row')[1].classList.contains('current'),
     ).toBe(true);
     expect(fixture.componentInstance.guess).toBe('');
+    const nextInput = fixture.nativeElement.querySelector('#word-guess') as HTMLInputElement;
+    expect(nextInput).not.toBe(input);
+    expect(document.activeElement).toBe(nextInput);
+    nextInput.value = 'treno';
+    nextInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.guess).toBe('treno');
   });
 
   it('conserva il miglior indizio di una lettera ripetuta sulla tastiera', async () => {
