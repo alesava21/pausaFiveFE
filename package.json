@@ -8,8 +8,8 @@
     "watch": "node tools/ng.mjs build --watch --configuration development",
     "test": "node tools/ng.mjs test",
     "lint": "eslint src --max-warnings=0",
-    "format": "prettier --write \"src/**/*.{ts,html,css}\" \"*.{json,mjs}\" \"tools/*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css}\" \"*.{json,mjs}\" \"tools/*.mjs\""
+    "format": "prettier --write \"src/**/*.{ts,html,css,scss}\" \"*.{json,mjs}\" \"tools/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,scss}\" \"*.{json,mjs}\" \"tools/*.mjs\""
   },
   "private": true,
   "packageManager": "npm@11.13.0",

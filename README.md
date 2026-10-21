@@ -55,3 +55,11 @@ Un valore esplicito di `NG_BUILD_CACHE_STORE` prevale sulla scelta automatica.
 legge automaticamente `.env`. Non inserire segreti nella configurazione Angular.
 Il frontend ha il proprio repository Git; board e report sono nel backend.
 La licenza del progetto è da scegliere in `../PausaFiveBE/LICENSE-TODO.md`.
+
+## Componenti condivisi (TASK-006 in revisione)
+
+Widget standalone in `src/app/shared/ui`, Header/Navigation/Footer in core/layout.
+Token in styles.scss, focus nativo, feedback testuali e reduced-motion.
+21 test, lint e build passati; il collaudo visivo 320/375/1280 è ancora pendente.
+Dettagli nel kit: `docs/16-DESIGN-SYSTEM.md` e report TASK-006.
+Dopo il cambio dell'entry globale CSS in SCSS riavviare il server di sviluppo.

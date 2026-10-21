@@ -1,39 +1,17 @@
-header,
-main,
-footer {
-  max-width: 68rem;
-  margin-inline: auto;
-  padding: 1.5rem;
-}
-header,
-nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-header {
-  justify-content: space-between;
-  border-bottom: 1px solid #d9dedb;
-}
 main {
-  min-height: 50vh;
-}
-.brand {
-  font-size: 1.5rem;
-  font-weight: 750;
-  text-decoration: none;
-}
-footer {
-  border-top: 1px solid #d9dedb;
+  min-height: 55vh;
+  padding-block: var(--space-12);
 }
 .skip-link {
   position: absolute;
-  top: 0;
-  left: 1rem;
-  transform: translateY(-150%);
-  padding: 0.75rem;
-  background: white;
+  z-index: 10;
+  top: var(--space-2);
+  left: var(--space-4);
+  transform: translateY(-200%);
+  padding: var(--space-3);
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 .skip-link:focus {
   transform: translateY(0);

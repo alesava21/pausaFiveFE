@@ -1,17 +1,4 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header>
-  <a routerLink="/" class="brand" aria-label="Pausa5, pagina iniziale">Pausa5</a>
-  <nav aria-label="Navigazione principale">
-    <a routerLink="/giochi">Tutti i giochi</a>
-    <a routerLink="/come-si-gioca">Come si gioca</a>
-  </nav>
-</header>
-<main id="contenuto" tabindex="-1"><router-outlet /></main>
-<footer>
-  <p>Una pausa di parole, numeri e logica.</p>
-  <nav aria-label="Informazioni">
-    <a routerLink="/privacy">Privacy</a>
-    <a routerLink="/cookie-policy">Cookie</a>
-    <a routerLink="/contatti">Contatti</a>
-  </nav>
-</footer>
+<app-header />
+<main id="contenuto" class="container" tabindex="-1"><router-outlet /></main>
+<app-footer />
