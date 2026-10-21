@@ -6,13 +6,16 @@
 <section class="word-game" aria-label="Partita Parola segreta" [attr.aria-busy]="busy()">
   @if (game(); as state) {
     <div class="game-topline">
+      <span class="brand">parola<span>segreta.</span></span>
       <span class="mode-badge">{{
-        mode() === 'DAILY' ? 'La sfida di oggi' : 'Senza fretta, senza limiti'
+        mode() === 'DAILY' ? 'La sfida di oggi' : 'Modalità illimitata'
       }}</span>
-      <span class="attempt-counter">{{ state.attempts.length }} <span>/ 6 tentativi</span></span>
     </div>
     <div class="play-area">
       <div class="board-wrap">
+        <div class="board-title">
+          <span>Ogni parola è un passo avanti</span><span>{{ state.attempts.length }}/6</span>
+        </div>
         <ol class="board" aria-label="Sei tentativi di cinque lettere">
           @for (row of emptyRows; track row) {
             @let attempt = state.attempts.at(row);
@@ -26,7 +29,6 @@
                 <span
                   class="tile"
                   [class.filled]="current && !!guess[column]"
-                  [class.cursor]="current && column === guess.length"
                   [class.correct]="attempt?.evaluation[column] === 'CORRECT'"
                   [class.present]="attempt?.evaluation[column] === 'PRESENT'"
                   [class.absent]="attempt?.evaluation[column] === 'ABSENT'"
@@ -37,94 +39,64 @@
                   }
                 </span>
               }
-              @if (current) {
-                <input
-                  #guessInput
-                  id="word-guess"
-                  class="board-input"
-                  name="guess"
-                  aria-label="La tua parola, cinque lettere"
-                  [(ngModel)]="guess"
-                  maxlength="5"
-                  autocomplete="off"
-                  autocapitalize="characters"
-                  spellcheck="false"
-                  aria-describedby="word-help"
-                  [disabled]="busy() || !!pending()"
-                  (keydown.enter)="submit(); $event.preventDefault()"
-                />
-              }
             </li>
           }
         </ol>
-        <p class="board-hint" id="word-help">
-          {{
-            state.status === 'ACTIVE'
-              ? 'Tocca la riga e scrivi una parola di 5 lettere, senza accenti.'
-              : 'Ogni tentativo ti ha avvicinato alla parola.'
-          }}
-        </p>
+        <div class="legend" aria-label="Come leggere gli indizi">
+          <span><i class="correct" aria-hidden="true"></i>Al posto giusto</span
+          ><span><i class="present" aria-hidden="true"></i>Da spostare</span
+          ><span><i class="absent" aria-hidden="true"></i>Assente</span>
+        </div>
       </div>
-      <aside class="game-guide" aria-label="Come leggere gli indizi">
-        <p class="eyebrow">Un indizio alla volta</p>
-        <h2>Cinque lettere.<br />La parola è tua.</h2>
-        <p>Prova una parola e segui gli indizi per trovare quella segreta.</p>
-        <ul class="legend">
-          <li>
-            <span class="legend-tile correct" aria-hidden="true">A</span
-            ><span><strong>Al posto giusto</strong>Lettera e posizione corrette</span>
-          </li>
-          <li>
-            <span class="legend-tile present" aria-hidden="true">B</span
-            ><span><strong>Quasi!</strong>C’è, ma in un’altra posizione</span>
-          </li>
-          <li>
-            <span class="legend-tile absent" aria-hidden="true">C</span
-            ><span><strong>Da escludere</strong>Non compare nella parola</span>
-          </li>
-        </ul>
-      </aside>
-    </div>
-    @if (state.status === 'ACTIVE') {
-      <form class="word-controls" (ngSubmit)="submit()">
-        <div class="keyboard" aria-label="Tastiera a schermo">
-          @for (keys of keyboard; track $index) {
-            <div class="keyboard-row">
-              @for (key of keys; track key) {
-                <button
-                  type="button"
-                  class="key"
-                  [class.correct]="keyState(key) === 'CORRECT'"
-                  [class.present]="keyState(key) === 'PRESENT'"
-                  [class.absent]="keyState(key) === 'ABSENT'"
-                  [disabled]="busy() || !!pending()"
-                  [attr.aria-label]="
-                    key === '⌫'
-                      ? 'Cancella ultima lettera'
-                      : key + (keyState(key) ? ': ' + label(keyState(key)!) : '')
-                  "
-                  (click)="typeKey(key)"
-                >
-                  {{ key }}
-                </button>
-              }
-            </div>
-          }
-        </div>
-        <div class="submit-line">
-          <span>{{
-            pending() ? 'Invio da confermare' : 'Tentativo ' + (state.attempts.length + 1) + ' di 6'
-          }}</span>
-          <app-button type="submit" [busy]="busy()" [disabled]="!pending() && guess.length !== 5"
-            >{{ pending() ? 'Riprova invio' : 'Conferma parola' }}
-            <span aria-hidden="true">↵</span></app-button
+      @if (state.status === 'ACTIVE') {
+        <form class="word-controls" (ngSubmit)="submit()">
+          <label for="word-guess"
+            >La tua parola <span>tentativo {{ state.attempts.length + 1 }} di 6</span></label
           >
-        </div>
-      </form>
-    } @else if (state.status === 'EXPIRED') {
+          <input
+            #guessInput
+            id="word-guess"
+            name="guess"
+            [(ngModel)]="guess"
+            maxlength="5"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="SCRIVI"
+            aria-describedby="word-help"
+            [disabled]="busy() || !!pending()"
+            (keydown.enter)="submit(); $event.preventDefault()"
+          />
+          <p id="word-help">
+            Cinque lettere, senza accenti. Premi Invio oppure «Prova parola» per confermare.
+          </p>
+          <div class="actions">
+            <button
+              type="button"
+              class="erase"
+              [disabled]="busy() || !!pending() || !guess.length"
+              (click)="erase()"
+              aria-label="Cancella ultima lettera"
+            >
+              ⌫ Cancella
+            </button>
+            <button
+              type="submit"
+              class="confirm"
+              [disabled]="busy() || (!pending() && guess.length !== 5)"
+              [attr.aria-busy]="busy()"
+            >
+              {{ busy() ? 'Invio in corso…' : pending() ? 'Riprova invio' : 'Prova parola' }}
+              <span aria-hidden="true">↵</span>
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+    @if (state.status === 'EXPIRED') {
       <p>La sfida è scaduta al cambio del giorno italiano.</p>
       <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
-    } @else {
+    } @else if (state.status !== 'ACTIVE') {
       <h2>{{ state.status === 'WON' ? 'Parola trovata!' : 'Partita conclusa' }}</h2>
       @if (state.solution) {
         <p>

@@ -52,24 +52,29 @@ describe('Parola segreta con autorità server', () => {
     );
   });
 
-  it('scrive nella riga attiva con tastiera a schermo e cancella senza inviare', async () => {
+  it('mostra Essenziale senza tastiera a schermo e consente di cancellare dal campo', async () => {
     const fixture = await page();
-    const keys = [...fixture.nativeElement.querySelectorAll('.key')] as HTMLButtonElement[];
-    for (const letter of 'GATTO') keys.find((key) => key.textContent?.trim() === letter)!.click();
+    const input = fixture.nativeElement.querySelector('#word-guess') as HTMLInputElement;
+    expect(fixture.nativeElement.querySelector('.keyboard')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.word-row input')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Partita conclusa');
+    input.value = 'GATTO';
+    input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    expect(fixture.componentInstance.guess).toBe('GATTO');
     const row = fixture.nativeElement.querySelector('.word-row.current');
     expect(
       [...row.querySelectorAll('.tile')]
         .map((tile) => (tile as HTMLElement).textContent?.trim())
         .join(''),
     ).toBe('GATTO');
-    keys.find((key) => key.textContent?.trim() === '⌫')!.click();
+    fixture.nativeElement.querySelector('.erase').click();
+    fixture.detectChanges();
     expect(fixture.componentInstance.guess).toBe('GATT');
+    expect(document.activeElement).toBe(input);
     TestBed.inject(HttpTestingController).expectNone((request) => request.url.endsWith('/guesses'));
   });
 
-  it('accetta la tastiera fisica nella riga e invia con Invio', async () => {
+  it('invia con Invio e mantiene il campo pronto per il tentativo successivo', async () => {
     const fixture = await page();
     const input = fixture.nativeElement.querySelector('#word-guess') as HTMLInputElement;
     input.value = 'libro';
@@ -95,7 +100,7 @@ describe('Parola segreta con autorità server', () => {
     ).toBe(true);
     expect(fixture.componentInstance.guess).toBe('');
     const nextInput = fixture.nativeElement.querySelector('#word-guess') as HTMLInputElement;
-    expect(nextInput).not.toBe(input);
+    expect(nextInput).toBe(input);
     expect(document.activeElement).toBe(nextInput);
     nextInput.value = 'treno';
     nextInput.dispatchEvent(new Event('input'));
@@ -103,7 +108,7 @@ describe('Parola segreta con autorità server', () => {
     expect(fixture.componentInstance.guess).toBe('treno');
   });
 
-  it('conserva il miglior indizio di una lettera ripetuta sulla tastiera', async () => {
+  it('mostra gli indizi server per le lettere ripetute e blocca modifiche durante un retry incerto', async () => {
     const fixture = await page();
     const component = fixture.componentInstance;
     component.game.set({
@@ -113,13 +118,18 @@ describe('Parola segreta con autorità server', () => {
       ],
       remainingAttempts: 5,
     });
-    fixture.detectChanges();
-    expect(component.keyState('T')).toBe('CORRECT');
-    expect(component.keyState('A')).toBe('PRESENT');
-    expect(component.keyState('Z')).toBeUndefined();
+    component.guess = 'LIBRO';
     component.pending.set({ guess: 'LIBRO', key: 'pending-key' });
-    component.typeKey('A');
-    expect(component.guess).toBe('');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const letters = fixture.nativeElement.querySelectorAll('.word-row:first-child .tile');
+    expect(letters[2].classList.contains('correct')).toBe(true);
+    expect(letters[3].classList.contains('absent')).toBe(true);
+    expect(fixture.nativeElement.querySelector('#word-guess').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('.erase').disabled).toBe(true);
+    component.erase();
+    expect(component.guess).toBe('LIBRO');
   });
 
   it('rifiuta input malformati prima della rete', async () => {
