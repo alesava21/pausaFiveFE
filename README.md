@@ -134,3 +134,21 @@ Restano da verificare un run GitHub positivo, un run su ramo con test fallito e
 l’esito dell’audit online: nessun remote è ancora configurato e il registry non
 è raggiungibile dalla sessione dell’agente. La prova negativa locale ha restituito
 exit 1; dopo rimozione del test temporaneo la suite è tornata a 70 test passati.
+
+## Proxy locale (TASK-009)
+
+`npm start` usa `proxy.conf.json`: `/api/**` inoltrato a
+`http://127.0.0.1:8080`, path e Origin preservati. API/cookie/CSRF restano
+same-origin dal browser; nessun CORS wildcard. Dopo modifiche al proxy/config
+riavviare il proprio server Angular. Non aggiungere `/actuator/**` al proxy.
+
+Il backend può usare il PostgreSQL Homebrew esistente oppure il DB Compose
+isolato su 55432. Onboarding in sei passaggi, comandi di stop e collaudo in
+`../PausaFiveBE/docs/18-LOCAL-DEVELOPMENT.md`. In questo punto della roadmap
+GET `/api/v1/games` risponde 403 Problem Details dal backend; il catalogo 200
+sarà disponibile da TASK-011. Questa risposta verifica il proxy senza anticipare
+endpoint di gioco. Nessuna chiamata API automatica durante il prerender.
+
+Anteprima statica Nginx sull’host opzionale dopo build, tramite
+`../PausaFiveBE/tools/serve-static-dev.sh`: porta 8081 e 404 reale; dettagli nel
+runbook locale. Non è un deploy o un nuovo requisito per `npm start`.
