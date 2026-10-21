@@ -1,60 +1,57 @@
 # Pausa5 — frontend
 
-Questa cartella `PausaFiveFE/` contiene il frontend Angular di Pausa5.
-Il backend e il kit operativo condiviso sono in `../PausaFiveBE/`.
+Frontend Angular 22 standalone, TypeScript e template strict, in italiano.
+Backend e kit condiviso sono nella cartella sorella `../PausaFiveBE/`.
+Leggere AGENTS.md, architettura e decisioni del kit prima di lavorare.
 
-## Stato attuale
+## Ambiente e comandi
 
-Sono presenti lo scaffold Angular 22.2.x, `package.json`, lockfile, sorgenti
-iniziali e un repository Git separato (commit iniziale `72ffad1`).
-TASK-001 completa le convenzioni senza modificare lo scaffold o le dipendenze.
-Il bootstrap conforme al prodotto resta in TASK-005: mancano prerender statico,
-strict TypeScript completo, UI italiana e struttura applicativa prevista.
-La baseline richiesta dal proprietario è Node esatto 24.16.0 (ADR-016).
-
-## Comandi dello scaffold esistente
-
-Dalla cartella frontend, selezionare Node 24.16.0 tramite `nvm use`
-(`.nvmrc`); npm richiesto 11.13.0. Le versioni sono dichiarate anche in `engines`
-e controllate da `.npmrc` (`engine-strict=true`).
+Node esatto 24.16.0 e npm 11.13.0 (ADR-016), indicati in `.nvmrc`,
+`engines` e `packageManager`; le versioni delle dipendenze sono nel lockfile.
 
 ```sh
-# Installazione da lockfile: comando disponibile, non rieseguito in TASK-001.
+nvm use
 npm ci
-
-# Server di sviluppo: script presente, avvio non collaudato in TASK-001.
-npm start
-
-# Due test dello scaffold; non testano ancora funzionalità del prodotto.
+npm run lint
+npm run format:check
 npm test -- --watch=false
-
-# Build di produzione dello scaffold, verificata con Node 24.16.0.
 npm run build
+npm start
 ```
 
-La shell di questa macchina seleziona normalmente Node 22.16.0, rifiutato dal
-CLI installato: selezionare Node 24.16.0 prima di eseguire i comandi.
-Non è presente uno script lint.
+La build di produzione prerenderizza le 12 rotte M1, genera HTML completo e
+asset in `dist/PausaFiveFE/browser` e non richiede un server Node in produzione.
+Le feature sono caricate lazy. Title e meta description cambiano per pagina;
+la pagina 404 ha noindex e le rotte sconosciute vi sono indirizzate nel router.
+Non si accede direttamente a window/document o al backend durante il prerender.
 
-Gli script npm passano da `tools/ng.mjs`: su macOS ARM64 seleziona la cache
-SQLite già integrata in Angular al posto di LMDB, che in questo ambiente
-termina con SIGABRT (134) durante la chiusura della cache nativa. La cache
-rimane attiva e non servono flag CI o modifiche alla telemetria. Gli argomenti
-del CLI vengono inoltrati normalmente. Un valore esplicito di
-`NG_BUILD_CACHE_STORE` prevale sulla selezione automatica.
-Prerender statico e proxy API sono **NON ANCORA CONFIGURATI** (TASK-005/009).
+`deploy/nginx.static.conf` è un esempio di server statico per servire questa
+cartella: accesso diretto ai percorsi generati, error_page dedicata con status
+404 per URL sconosciuti. Il proxy API e il deploy completo sono in TASK-009.
+Non sostituire la gestione 404 con un fallback generalizzato a index.html.
+La configurazione Nginx è predisposta; il collaudo del server è nel task ambiente.
 
-## Convenzioni e documentazione
+## Stato del prodotto
 
-Leggere `../PausaFiveBE/AGENTS.md`, `docs/02-ARCHITECTURE.md`,
-`docs/12-DECISIONS.md` (ADR-015) e il task assegnato in `tasks/` nel backend.
-Stato operativo in `../PausaFiveBE/tasks/BOARD.md`.
+Sono predisposte homepage, catalogo, pagine dei giochi e informazioni con
+contenuto minimo. Le partite e il catalogo da API saranno implementati nei
+rispettivi task. Privacy, cookie e contatti sono esplicitamente in preparazione,
+non costituiscono informative definitive e devono essere completati prima
+che il sito venga pubblicato. Il design system completo è in TASK-006;
+canonical, sitemap e SEO completo in TASK-027.
 
-Da PausaFiveBE, `sh tools/check-repository.sh` verifica anche questa cartella.
-`.editorconfig` prescrive UTF-8, LF e 2 spazi; `.gitignore` esclude build,
-IDE, segreti e dati locali. `.env.example` contiene soltanto valori pubblici
-di sviluppo: lo scaffold non legge ancora questo file. Non inserire segreti
-nella configurazione pubblica Angular.
+ESLint include controlli Angular/template/accessibilità e vincoli sugli import:
+core/shared non importano feature e ogni feature resta indipendente dalle altre.
+Prettier gestisce i file applicativi e di configurazione, senza riscrivere il kit.
 
-La licenza del progetto è ancora da scegliere dal proprietario:
-`../PausaFiveBE/LICENSE-TODO.md`.
+## Cache e configurazione locale
+
+Gli script Angular passano da `tools/ng.mjs`: su macOS ARM64 usa la cache SQLite
+integrata nel builder per evitare il SIGABRT/134 del modulo nativo LMDB.
+La cache resta attiva e gli argomenti CLI vengono inoltrati normalmente.
+Un valore esplicito di `NG_BUILD_CACHE_STORE` prevale sulla scelta automatica.
+
+`.env.example` contiene soltanto valori pubblici di sviluppo; lo scaffold non
+legge automaticamente `.env`. Non inserire segreti nella configurazione Angular.
+Il frontend ha il proprio repository Git; board e report sono nel backend.
+La licenza del progetto è da scegliere in `../PausaFiveBE/LICENSE-TODO.md`.
