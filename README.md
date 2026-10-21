@@ -105,3 +105,32 @@ L’endpoint CSRF e le sessioni guest reali saranno implementati nel TASK-015:
 questo task verifica il client con HttpTestingController, non dichiara
 un’integrazione con endpoint ancora assenti. Proxy locale previsto nel TASK-009;
 nessuna chiamata cross-origin con credenziali abilitata.
+
+## CI GitHub Actions (TASK-008, in revisione)
+
+Il workflow `.github/workflows/ci.yml` è predisposto per push, PR e avvio manuale.
+Usa Node da `.nvmrc` (24.16.0), npm 11.13.0, cache npm e token `contents: read`;
+nessun secret di produzione o deploy. Le action sono fissate a SHA ufficiali.
+Job separati: formatter/lint, unit test + build statica, `npm audit --audit-level=high`
+(incluso tooling dev). Il gate finale fallisce se un job fallisce o viene saltato.
+Se npm audit non raggiunge il registry, il job fallisce: non è una scansione pulita.
+
+Comandi locali equivalenti, dopo `nvm use` e `npm ci`:
+
+```sh
+npm run format:check
+npm run lint
+npm run test:ci
+npm run build
+npm audit --audit-level=high
+```
+
+`test:ci` salva JUnit in `test-results/unit.xml` (ignorato da Git); il workflow
+carica solo quel report, anche se un test fallisce, con retention di 7 giorni.
+Non pubblica build o release. Richiedere il check `CI frontend completata` nelle
+regole del ramo GitHub prima di usarlo come gate di merge/release.
+
+Restano da verificare un run GitHub positivo, un run su ramo con test fallito e
+l’esito dell’audit online: nessun remote è ancora configurato e il registry non
+è raggiungibile dalla sessione dell’agente. La prova negativa locale ha restituito
+exit 1; dopo rimozione del test temporaneo la suite è tornata a 70 test passati.
