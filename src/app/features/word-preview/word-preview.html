@@ -1,6 +1,6 @@
 <header class="preview-header">
   <a routerLink="/parole-illimitate">← Torna al gioco</a>
-  <span>Laboratorio grafico · 6 proposte</span>
+  <span>Essenziale conservata · 5 nuove proposte</span>
 </header>
 <nav class="design-picker" aria-label="Scegli un’alternativa grafica">
   @for (item of designs; track item.id) {
@@ -30,7 +30,9 @@
   <div class="demo-layout">
     <div class="board-panel">
       <div class="board-title">
-        <span>{{ variant() === 3 ? 'I tuoi indizi' : 'Ogni parola è un passo avanti' }}</span
+        <span>{{
+          variant() === 5 ? 'Le tue sei possibilità' : 'Ogni parola è un passo avanti'
+        }}</span
         ><span>{{ attempts().length }}/6</span>
       </div>
       <ol class="board" aria-label="Tentativi dimostrativi">
@@ -60,6 +62,20 @@
                 }
               </span>
             }
+            @if (variant() === 2 && current) {
+              <input
+                #editor
+                class="inline-editor"
+                aria-label="Scrivi la tua parola di cinque lettere"
+                name="inline-draft"
+                [(ngModel)]="draft"
+                maxlength="5"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                (keydown.enter)="submit(); $event.preventDefault()"
+              />
+            }
           </li>
         }
       </ol>
@@ -75,24 +91,30 @@
         <p>Una parola, cinque lettere.<br />Prenditi il tuo tempo.</p>
       </div>
       @if (attempts().length < 6) {
-        <label for="preview-word"
-          >La tua parola <span>tentativo {{ attempts().length + 1 }} di 6</span></label
-        >
-        <input
-          #editor
-          id="preview-word"
-          name="draft"
-          [(ngModel)]="draft"
-          maxlength="5"
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          placeholder="SCRIVI"
-          aria-describedby="preview-help"
-        />
-        <p id="preview-help" class="input-help">
-          Scrivi con la tastiera oppure usa i tasti qui sotto.
-        </p>
+        @if (variant() !== 2) {
+          <label for="preview-word"
+            >La tua parola <span>tentativo {{ attempts().length + 1 }} di 6</span></label
+          >
+          <input
+            #editor
+            id="preview-word"
+            name="draft"
+            [(ngModel)]="draft"
+            maxlength="5"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="SCRIVI"
+            aria-describedby="preview-help"
+          />
+          <p id="preview-help" class="input-help">
+            Scrivi con la tastiera oppure usa i tasti qui sotto.
+          </p>
+        } @else {
+          <p class="input-help">
+            Scrivi direttamente nella riga evidenziata. Invio per confermare.
+          </p>
+        }
         <div class="keyboard" aria-label="Tastiera dimostrativa">
           @for (row of keys; track $index) {
             <div>

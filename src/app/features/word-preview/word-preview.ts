@@ -11,33 +11,33 @@ export const wordDesigns = [
   },
   {
     id: 2,
-    name: 'Quaderno',
+    name: 'Classica',
     description:
-      'Un piccolo quaderno di parole: righe numerate, lettere morbide e scrittura su una riga dedicata.',
+      'Solo griglia e tastiera: scrivi direttamente nelle caselle, senza un campo separato. Un formato pulito e familiare.',
   },
   {
     id: 3,
-    name: 'Una parola alla volta',
+    name: 'Compatta',
     description:
-      'Il tentativo attuale in primo piano. Quelli precedenti rimangono come piccoli indizi.',
+      'Una piccola console: griglia raccolta, comandi ravvicinati e tastiera su un pannello morbido. Meno spazio, più gioco.',
   },
   {
     id: 4,
-    name: 'Doppio pannello',
+    name: 'Righe',
     description:
-      'A sinistra scrivi, a destra segui i tentativi. Una postazione ordinata, con spazio per pensare.',
+      'Ogni tentativo è una fascia numerata. Le lettere respirano su una superficie continua, senza trenta caselle separate.',
   },
   {
     id: 5,
-    name: 'Tessere',
+    name: 'A schede',
     description:
-      'Lettere come pedine da tavolo, bordi arrotondati e una superficie verde delicata.',
+      'Sei piccole schede, una per tentativo, disposte a coppie. Una vista panoramica per confrontare subito le parole.',
   },
   {
     id: 6,
-    name: 'Tipografico',
+    name: 'Verde',
     description:
-      'Lettere grandi, linee sottili e spazio bianco. Una pagina leggera, senza scatole intorno alle parole.',
+      'Una plancia verde profondo, lettere color crema e comandi chiari. La stessa palette con un carattere più deciso.',
   },
 ] as const;
 

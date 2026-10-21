@@ -22,6 +22,30 @@ describe('Anteprime grafiche Word', () => {
     expect(component.attempts()).toHaveLength(2);
   });
 
+  it('conserva Essenziale e permette di scrivere direttamente nella nuova Classica', () => {
+    TestBed.configureTestingModule({ imports: [WordPreview], providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(WordPreview);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.design().name).toBe('Essenziale');
+    expect(fixture.nativeElement.querySelector('.inline-editor')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.composer input')).toBeTruthy();
+    fixture.componentRef.setInput('variant', 2);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector(
+      '.current .inline-editor',
+    ) as HTMLInputElement;
+    expect(document.activeElement).toBe(input);
+    input.value = 'LIBRO';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.attempts()).toHaveLength(3);
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('.current .inline-editor'),
+    );
+    expect(fixture.nativeElement.querySelector('.composer input')).toBeNull();
+  });
+
   it('rifiuta input malformati e termina dopo sei righe', () => {
     TestBed.configureTestingModule({ imports: [WordPreview], providers: [provideRouter([])] });
     const component = TestBed.createComponent(WordPreview).componentInstance;
