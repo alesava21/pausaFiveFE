@@ -152,3 +152,12 @@ endpoint di gioco. Nessuna chiamata API automatica durante il prerender.
 Anteprima statica Nginx sull’host opzionale dopo build, tramite
 `../PausaFiveBE/tools/serve-static-dev.sh`: porta 8081 e 404 reale; dettagli nel
 runbook locale. Non è un deploy o un nuovo requisito per `npm start`.
+
+## Dizionari Parola segreta
+
+Il set pubblico endless è in `src/assets/word/endless-solutions.json`;
+`npm run validate:dictionary` lo controlla senza scaricare dati esterni.
+Build e test Angular lo validano automaticamente. `npm run test:ci` esegue anche
+i test del validatore. Per verificare insieme i due repository affiancati:
+`node tools/validate-dictionary.mjs --backend ../PausaFiveBE`.
+Il set daily rimane una risorsa server; non copiarlo negli asset frontend.

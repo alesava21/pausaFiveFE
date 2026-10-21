@@ -8,9 +8,11 @@
     "watch": "node tools/ng.mjs build --watch --configuration development",
     "test": "node tools/ng.mjs test",
     "lint": "eslint src --max-warnings=0",
-    "format": "prettier --write \"src/**/*.{ts,html,css,scss}\" \"*.{json,mjs}\" \"tools/*.mjs\" \".github/workflows/*.{yml,yaml}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css,scss}\" \"*.{json,mjs}\" \"tools/*.mjs\" \".github/workflows/*.{yml,yaml}\"",
-    "test:ci": "node tools/ng.mjs test --watch=false --reporters=junit --reporters=default --output-file=test-results/unit.xml"
+    "format": "prettier --write \"src/**/*.{ts,html,css,scss,json}\" \"*.{json,mjs}\" \"tools/*.mjs\" \".github/workflows/*.{yml,yaml}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\" \"*.{json,mjs}\" \"tools/*.mjs\" \".github/workflows/*.{yml,yaml}\"",
+    "test:ci": "npm run test:dictionary && node tools/ng.mjs test --watch=false --reporters=junit --reporters=default --output-file=test-results/unit.xml",
+    "validate:dictionary": "node tools/validate-dictionary.mjs",
+    "test:dictionary": "node --test tools/validate-dictionary.test.mjs"
   },
   "private": true,
   "packageManager": "npm@11.13.0",

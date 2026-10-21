@@ -4,4 +4,9 @@ if (process.platform === 'darwin' && process.arch === 'arm64') {
   process.env.NG_BUILD_CACHE_STORE ??= 'sqlite';
 }
 
+if (['build', 'test'].includes(process.argv[2])) {
+  const { validateEndless } = await import('./validate-dictionary.mjs');
+  validateEndless();
+}
+
 await import('../node_modules/@angular/cli/bin/ng.js');
