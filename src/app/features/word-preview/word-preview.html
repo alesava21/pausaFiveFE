@@ -109,22 +109,13 @@
               aria-describedby="preview-help"
             />
             <p id="preview-help" class="input-help">
-              Scrivi con la tastiera oppure usa i tasti qui sotto.
+              Scrivi la tua parola e premi «Prova parola» per confermare.
             </p>
           } @else {
             <p class="input-help">
               Scrivi direttamente nella riga evidenziata. Invio per confermare.
             </p>
           }
-          <div class="keyboard" aria-label="Tastiera dimostrativa">
-            @for (row of keys; track $index) {
-              <div>
-                @for (key of row; track key) {
-                  <button type="button" (click)="write(key)">{{ key }}</button>
-                }
-              </div>
-            }
-          </div>
           <div class="actions">
             <button
               type="button"

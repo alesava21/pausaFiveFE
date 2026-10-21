@@ -27,6 +27,7 @@ describe('Anteprime grafiche Word', () => {
     const fixture = TestBed.createComponent(WordPreview);
     fixture.detectChanges();
     expect(fixture.componentInstance.design().name).toBe('Essenziale');
+    expect(fixture.nativeElement.querySelector('.keyboard')).toBeNull();
     expect(fixture.nativeElement.querySelector('.inline-editor')).toBeNull();
     expect(fixture.nativeElement.querySelector('.composer input')).toBeTruthy();
     fixture.componentRef.setInput('variant', 2);

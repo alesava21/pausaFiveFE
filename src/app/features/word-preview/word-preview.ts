@@ -7,7 +7,7 @@ export const wordDesigns = [
     id: 1,
     name: 'Essenziale',
     description:
-      'Griglia compatta al centro, caselle nette e tastiera vicina. Tutto a portata di mano.',
+      'Griglia compatta al centro, caselle nette e un campo per scrivere. Tutto a portata di mano.',
   },
   {
     id: 2,
