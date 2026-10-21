@@ -5,50 +5,120 @@
 </div>
 <section class="word-game" aria-label="Partita Parola segreta" [attr.aria-busy]="busy()">
   @if (game(); as state) {
-    <p class="game-caption">
-      {{ mode() === 'DAILY' ? 'Sfida del ' + state.serverDate : 'Allenamento illimitato' }}
-    </p>
-    <ol class="board" aria-label="Sei tentativi di cinque lettere">
-      @for (row of emptyRows; track row) {
-        <li class="word-row" [attr.aria-label]="'Tentativo ' + (row + 1)">
-          @for (column of columns; track column) {
+    <div class="game-topline">
+      <span class="mode-badge">{{
+        mode() === 'DAILY' ? 'La sfida di oggi' : 'Senza fretta, senza limiti'
+      }}</span>
+      <span class="attempt-counter">{{ state.attempts.length }} <span>/ 6 tentativi</span></span>
+    </div>
+    <div class="play-area">
+      <div class="board-wrap">
+        <ol class="board" aria-label="Sei tentativi di cinque lettere">
+          @for (row of emptyRows; track row) {
             @let attempt = state.attempts.at(row);
-            <span
-              class="tile"
-              [class.correct]="attempt?.evaluation[column] === 'CORRECT'"
-              [class.present]="attempt?.evaluation[column] === 'PRESENT'"
-              [class.absent]="attempt?.evaluation[column] === 'ABSENT'"
+            @let current = state.status === 'ACTIVE' && row === state.attempts.length;
+            <li
+              class="word-row"
+              [class.current]="current"
+              [attr.aria-label]="'Tentativo ' + (row + 1)"
             >
-              {{ attempt?.guess[column] || '·' }}
-              @if (attempt) {
-                <span class="sr-only">: {{ label(attempt.evaluation[column]) }}</span>
+              @for (column of columns; track column) {
+                <span
+                  class="tile"
+                  [class.filled]="current && !!guess[column]"
+                  [class.cursor]="current && column === guess.length"
+                  [class.correct]="attempt?.evaluation[column] === 'CORRECT'"
+                  [class.present]="attempt?.evaluation[column] === 'PRESENT'"
+                  [class.absent]="attempt?.evaluation[column] === 'ABSENT'"
+                >
+                  {{ attempt?.guess[column] || (current ? guess[column]?.toUpperCase() : '') }}
+                  @if (attempt) {
+                    <span class="sr-only">: {{ label(attempt.evaluation[column]) }}</span>
+                  }
+                </span>
               }
-            </span>
+              @if (current) {
+                <input
+                  id="word-guess"
+                  class="board-input"
+                  name="guess"
+                  aria-label="La tua parola, cinque lettere"
+                  [(ngModel)]="guess"
+                  maxlength="5"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                  aria-describedby="word-help"
+                  [disabled]="busy() || !!pending()"
+                  (keydown.enter)="submit(); $event.preventDefault()"
+                />
+              }
+            </li>
           }
-        </li>
-      }
-    </ol>
-    @if (state.status === 'ACTIVE') {
-      <form (ngSubmit)="submit()">
-        <label for="word-guess">La tua parola</label>
-        <input
-          id="word-guess"
-          name="guess"
-          [(ngModel)]="guess"
-          maxlength="5"
-          minlength="5"
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          aria-describedby="word-help"
-          [disabled]="busy() || !!pending()"
-        />
-        <p id="word-help">
-          Cinque lettere, senza accenti. Hai ancora {{ state.remainingAttempts }} tentativi.
+        </ol>
+        <p class="board-hint" id="word-help">
+          {{
+            state.status === 'ACTIVE'
+              ? 'Tocca la riga e scrivi una parola di 5 lettere, senza accenti.'
+              : 'Ogni tentativo ti ha avvicinato alla parola.'
+          }}
         </p>
-        <app-button type="submit" [busy]="busy()">{{
-          pending() ? 'Riprova invio' : 'Prova la parola'
-        }}</app-button>
+      </div>
+      <aside class="game-guide" aria-label="Come leggere gli indizi">
+        <p class="eyebrow">Un indizio alla volta</p>
+        <h2>Cinque lettere.<br />La parola è tua.</h2>
+        <p>Prova una parola e segui gli indizi per trovare quella segreta.</p>
+        <ul class="legend">
+          <li>
+            <span class="legend-tile correct" aria-hidden="true">A</span
+            ><span><strong>Al posto giusto</strong>Lettera e posizione corrette</span>
+          </li>
+          <li>
+            <span class="legend-tile present" aria-hidden="true">B</span
+            ><span><strong>Quasi!</strong>C’è, ma in un’altra posizione</span>
+          </li>
+          <li>
+            <span class="legend-tile absent" aria-hidden="true">C</span
+            ><span><strong>Da escludere</strong>Non compare nella parola</span>
+          </li>
+        </ul>
+      </aside>
+    </div>
+    @if (state.status === 'ACTIVE') {
+      <form class="word-controls" (ngSubmit)="submit()">
+        <div class="keyboard" aria-label="Tastiera a schermo">
+          @for (keys of keyboard; track $index) {
+            <div class="keyboard-row">
+              @for (key of keys; track key) {
+                <button
+                  type="button"
+                  class="key"
+                  [class.correct]="keyState(key) === 'CORRECT'"
+                  [class.present]="keyState(key) === 'PRESENT'"
+                  [class.absent]="keyState(key) === 'ABSENT'"
+                  [disabled]="busy() || !!pending()"
+                  [attr.aria-label]="
+                    key === '⌫'
+                      ? 'Cancella ultima lettera'
+                      : key + (keyState(key) ? ': ' + label(keyState(key)!) : '')
+                  "
+                  (click)="typeKey(key)"
+                >
+                  {{ key }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+        <div class="submit-line">
+          <span>{{
+            pending() ? 'Invio da confermare' : 'Tentativo ' + (state.attempts.length + 1) + ' di 6'
+          }}</span>
+          <app-button type="submit" [busy]="busy()" [disabled]="!pending() && guess.length !== 5"
+            >{{ pending() ? 'Riprova invio' : 'Conferma parola' }}
+            <span aria-hidden="true">↵</span></app-button
+          >
+        </div>
       </form>
     } @else if (state.status === 'EXPIRED') {
       <p>La sfida è scaduta al cambio del giorno italiano.</p>

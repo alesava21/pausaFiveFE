@@ -51,6 +51,68 @@ describe('Parola segreta con autorità server', () => {
     );
   });
 
+  it('scrive nella riga attiva con tastiera a schermo e cancella senza inviare', async () => {
+    const fixture = await page();
+    const keys = [...fixture.nativeElement.querySelectorAll('.key')] as HTMLButtonElement[];
+    for (const letter of 'GATTO') keys.find((key) => key.textContent?.trim() === letter)!.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.guess).toBe('GATTO');
+    const row = fixture.nativeElement.querySelector('.word-row.current');
+    expect(
+      [...row.querySelectorAll('.tile')]
+        .map((tile) => (tile as HTMLElement).textContent?.trim())
+        .join(''),
+    ).toBe('GATTO');
+    keys.find((key) => key.textContent?.trim() === '⌫')!.click();
+    expect(fixture.componentInstance.guess).toBe('GATT');
+    TestBed.inject(HttpTestingController).expectNone((request) => request.url.endsWith('/guesses'));
+  });
+
+  it('accetta la tastiera fisica nella riga e invia con Invio', async () => {
+    const fixture = await page();
+    const input = fixture.nativeElement.querySelector('#word-guess') as HTMLInputElement;
+    input.value = 'libro';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.guess).toBe('libro');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const http = TestBed.inject(HttpTestingController);
+    const request = http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`);
+    expect(request.request.body).toEqual({ guess: 'LIBRO' });
+    request.flush({ status: 'ACTIVE' });
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).flush({
+      ...active,
+      remainingAttempts: 5,
+      attempts: [
+        { guess: 'LIBRO', evaluation: ['ABSENT', 'ABSENT', 'ABSENT', 'ABSENT', 'ABSENT'] },
+      ],
+    });
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('.word-row')[1].classList.contains('current'),
+    ).toBe(true);
+    expect(fixture.componentInstance.guess).toBe('');
+  });
+
+  it('conserva il miglior indizio di una lettera ripetuta sulla tastiera', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    component.game.set({
+      ...active,
+      attempts: [
+        { guess: 'GATTO', evaluation: ['ABSENT', 'PRESENT', 'CORRECT', 'ABSENT', 'ABSENT'] },
+      ],
+      remainingAttempts: 5,
+    });
+    fixture.detectChanges();
+    expect(component.keyState('T')).toBe('CORRECT');
+    expect(component.keyState('A')).toBe('PRESENT');
+    expect(component.keyState('Z')).toBeUndefined();
+    component.pending.set({ guess: 'LIBRO', key: 'pending-key' });
+    component.typeKey('A');
+    expect(component.guess).toBe('');
+  });
+
   it('rifiuta input malformati prima della rete', async () => {
     const fixture = await page();
     for (const guess of [' GATTO', 'CITTÀ', 'ſERPE', 'ABCD', 'AB123']) {

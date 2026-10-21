@@ -25,6 +25,7 @@ export class WordPage {
   guess = '';
   readonly emptyRows = [0, 1, 2, 3, 4, 5];
   readonly columns = [0, 1, 2, 3, 4];
+  readonly keyboard = ['QWERTYUIOP'.split(''), 'ASDFGHJKL'.split(''), 'ZXCVBNM⌫'.split('')];
   private readonly client = inject(WordClient);
   private readonly destroy = inject(DestroyRef);
 
@@ -98,6 +99,24 @@ export class WordPage {
           this.fail(error);
         },
       });
+  }
+
+  typeKey(key: string): void {
+    if (this.busy() || this.pending() || this.game()?.status !== 'ACTIVE') return;
+    this.guess = key === '⌫' ? this.guess.slice(0, -1) : (this.guess + key).slice(0, 5);
+  }
+
+  keyState(key: string): LetterEvaluation | undefined {
+    const priority = { ABSENT: 1, PRESENT: 2, CORRECT: 3 };
+    let result: LetterEvaluation | undefined;
+    for (const attempt of this.game()?.attempts ?? []) {
+      for (let index = 0; index < attempt.guess.length; index++) {
+        const value = attempt.evaluation[index];
+        if (attempt.guess[index] === key && (!result || priority[value] > priority[result]))
+          result = value;
+      }
+    }
+    return result;
   }
 
   label(value: LetterEvaluation): string {
