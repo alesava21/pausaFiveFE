@@ -1,0 +1,84 @@
+<div class="page-intro">
+  <p class="eyebrow">La tua pausa di parole</p>
+  <h1>{{ heading() }}</h1>
+  <p>{{ description() }}</p>
+</div>
+<section class="word-game" aria-label="Partita Parola segreta" [attr.aria-busy]="busy()">
+  @if (game(); as state) {
+    <p class="game-caption">
+      {{ mode() === 'DAILY' ? 'Sfida del ' + state.serverDate : 'Allenamento illimitato' }}
+    </p>
+    <ol class="board" aria-label="Sei tentativi di cinque lettere">
+      @for (row of emptyRows; track row) {
+        <li class="word-row" [attr.aria-label]="'Tentativo ' + (row + 1)">
+          @for (column of columns; track column) {
+            @let attempt = state.attempts.at(row);
+            <span
+              class="tile"
+              [class.correct]="attempt?.evaluation[column] === 'CORRECT'"
+              [class.present]="attempt?.evaluation[column] === 'PRESENT'"
+              [class.absent]="attempt?.evaluation[column] === 'ABSENT'"
+            >
+              {{ attempt?.guess[column] || '·' }}
+              @if (attempt) {
+                <span class="sr-only">: {{ label(attempt.evaluation[column]) }}</span>
+              }
+            </span>
+          }
+        </li>
+      }
+    </ol>
+    @if (state.status === 'ACTIVE') {
+      <form (ngSubmit)="submit()">
+        <label for="word-guess">La tua parola</label>
+        <input
+          id="word-guess"
+          name="guess"
+          [(ngModel)]="guess"
+          maxlength="5"
+          minlength="5"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          aria-describedby="word-help"
+          [disabled]="busy() || !!pending()"
+        />
+        <p id="word-help">
+          Cinque lettere, senza accenti. Hai ancora {{ state.remainingAttempts }} tentativi.
+        </p>
+        <app-button type="submit" [busy]="busy()">{{
+          pending() ? 'Riprova invio' : 'Prova la parola'
+        }}</app-button>
+      </form>
+    } @else if (state.status === 'EXPIRED') {
+      <p>La sfida è scaduta al cambio del giorno italiano.</p>
+      <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
+    } @else {
+      <h2>{{ state.status === 'WON' ? 'Parola trovata!' : 'Partita conclusa' }}</h2>
+      @if (state.solution) {
+        <p>
+          La parola era <strong>{{ state.solution }}</strong
+          >.
+        </p>
+      }
+      @if (mode() === 'ENDLESS') {
+        <app-button [busy]="busy()" (activated)="open(true)">Nuova parola</app-button>
+      } @else {
+        <p>Torna domani per una nuova sfida.</p>
+      }
+    }
+  } @else {
+    <h2>{{ busy() || !ready() ? 'Prepariamo la partita…' : 'Partita non disponibile' }}</h2>
+    @if (ready() && !busy()) {
+      <app-button (activated)="open()">Riprova</app-button>
+    }
+  }
+  <p class="message" role="status" aria-live="polite">{{ message() }}</p>
+  <p class="credits">
+    Lessico derivato da
+    <a href="https://docs.sslmit.unibo.it/doku.php?id=resources%3Amorph-it">Morph-it!</a>, Marco
+    Baroni ed Eros Zanchetta, Università di Bologna.
+    <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>. Selezione e filtri
+    Pausa5.
+  </p>
+</section>

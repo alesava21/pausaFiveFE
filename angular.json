@@ -22,11 +22,6 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              },
-              {
-                "glob": "*.json",
-                "input": "src/assets/word",
-                "output": "assets/word"
               }
             ],
             "styles": ["src/styles.scss"],

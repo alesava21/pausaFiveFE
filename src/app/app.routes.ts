@@ -12,7 +12,17 @@ function page(
   loadComponent: NonNullable<Route['loadComponent']>,
   noindex = false,
 ): Route {
-  return { path, title: heading, data: { heading, description, noindex }, loadComponent };
+  return {
+    path,
+    title: heading,
+    data: {
+      heading,
+      description,
+      noindex,
+      mode: path === 'parole-illimitate' ? 'ENDLESS' : 'DAILY',
+    },
+    loadComponent,
+  };
 }
 
 export const routes: Routes = [

@@ -55,6 +55,19 @@ export type CreateSessionRequest = Record<string, never>;
 export interface WordGuessRequest {
   readonly guess: string;
 }
+export interface WordAttemptDto {
+  readonly guess: string;
+  readonly evaluation: readonly LetterEvaluation[];
+}
+export interface WordSessionDto extends DailyTimingDto {
+  readonly sessionId: string;
+  readonly puzzleId: string;
+  readonly mode: GameMode;
+  readonly status: 'ACTIVE' | 'WON' | 'LOST' | 'EXPIRED';
+  readonly attempts: readonly WordAttemptDto[];
+  readonly remainingAttempts: number;
+  readonly solution?: string;
+}
 export type LetterEvaluation = 'ABSENT' | 'PRESENT' | 'CORRECT';
 interface WordGuessOutcomeDto {
   readonly attemptNumber: number;

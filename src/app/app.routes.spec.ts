@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Meta, Title } from '@angular/platform-browser';
 import { Router, TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
@@ -24,6 +26,8 @@ describe('Rotte M1', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter(routes, withComponentInputBinding()),
         { provide: TitleStrategy, useClass: PageTitleStrategy },
       ],

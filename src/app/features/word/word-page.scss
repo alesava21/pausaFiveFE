@@ -1,0 +1,67 @@
+.word-game {
+  max-width: 36rem;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.board {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+  max-width: 22rem;
+}
+.word-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+.tile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: clamp(1.1rem, 5vw, 1.75rem);
+  font-weight: 750;
+}
+.correct {
+  background: #254e35;
+  color: #fff;
+  border-style: double;
+}
+.present {
+  background: #745000;
+  color: #fff;
+  border-style: dashed;
+}
+.absent {
+  background: #4c5350;
+  color: #fff;
+}
+form {
+  display: grid;
+  gap: 0.75rem;
+}
+label {
+  font-weight: 650;
+}
+input {
+  width: 100%;
+  min-height: 3rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+}
+.message {
+  min-height: 1.5em;
+}
+.credits {
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}

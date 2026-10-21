@@ -1,15 +1,10 @@
-# Lessico endless originale — TASK-010
+# Nessun lessico Word pubblico
 
-`endless-solutions.json`: 137 parole italiane comuni di cinque lettere A-Z,
-selezione originale offline preparata con assistenza dell'agente. Nessun dataset
-esterno copiato; nessuna attribution di terzi richiesta. La scelta della licenza
-del progetto rimane al proprietario. Nessuna revisione umana attestata.
+Il JSON endless originale del TASK-010 è stato ritirato nell'integrazione
+Morph-it! richiesta dal proprietario. Word è server sia daily sia endless:
+non copiare qui dizionari, liste di soluzioni, seed o calendari.
 
-Questo è il solo file lessicale copiato tra gli asset pubblici Angular. Non
-aggiungere qui soluzioni daily, calendari o seed riservati. La lista è disgiunta
-dalle 219 soluzioni server al momento di TASK-010.
-
-Validazione locale: `npm run validate:dictionary` dalla radice frontend.
-Con entrambi i repository: `node tools/validate-dictionary.mjs --backend ../PausaFiveBE`.
-Provenienza e processo editoriale completi in
-`PausaFiveBE/LICENSES-THIRD-PARTY.md` e `PausaFiveBE/docs/10-CONTENT-EDITORIAL.md`.
+`npm run validate:dictionary` rifiuta il ripristino delle vecchie liste negli
+asset. Il controllo precede build e test. Le attribuzioni Morph-it! / CC BY-SA
+2.0 sono mostrate nelle pagine Word; dettagli e procedura editoriale in
+`PausaFiveBE/docs/parola-segreta-dataset.md`.
