@@ -45,7 +45,9 @@ describe('Rotte M1', () => {
     'apre l’anteprima %i senza chiamate al backend e con noindex',
     async (variant) => {
       const harness = await RouterTestingHarness.create(`/anteprime/parola/${variant}`);
-      expect(harness.routeNativeElement?.querySelector(`.v${variant}`)).toBeTruthy();
+      expect(
+        harness.routeNativeElement?.querySelector(variant === 1 ? '.v1' : `.m${variant}`),
+      ).toBeTruthy();
       expect(harness.routeNativeElement?.querySelectorAll('.design-picker a')).toHaveLength(6);
       expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toContain('noindex');
     },

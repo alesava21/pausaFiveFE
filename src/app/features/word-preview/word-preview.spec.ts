@@ -22,7 +22,7 @@ describe('Anteprime grafiche Word', () => {
     expect(component.attempts()).toHaveLength(2);
   });
 
-  it('conserva Essenziale e permette di scrivere direttamente nella nuova Classica', () => {
+  it('conserva Essenziale e permette di scrivere direttamente nelle nuove proposte moderne', () => {
     TestBed.configureTestingModule({ imports: [WordPreview], providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(WordPreview);
     fixture.detectChanges();
@@ -45,6 +45,25 @@ describe('Anteprime grafiche Word', () => {
     );
     expect(fixture.nativeElement.querySelector('.composer input')).toBeNull();
   });
+
+  it.each([2, 3, 4, 5, 6])(
+    'la proposta moderna %i mantiene la digitazione e il focus tra tentativi',
+    (variant) => {
+      TestBed.configureTestingModule({ imports: [WordPreview], providers: [provideRouter([])] });
+      const fixture = TestBed.createComponent(WordPreview);
+      fixture.componentRef.setInput('variant', variant);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector(`.modern.m${variant}`)).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.demo')).toBeNull();
+      const input = fixture.nativeElement.querySelector('.inline-editor') as HTMLInputElement;
+      input.value = 'LIBRO';
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.attempts()).toHaveLength(3);
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('.inline-editor'));
+    },
+  );
 
   it('rifiuta input malformati e termina dopo sei righe', () => {
     TestBed.configureTestingModule({ imports: [WordPreview], providers: [provideRouter([])] });

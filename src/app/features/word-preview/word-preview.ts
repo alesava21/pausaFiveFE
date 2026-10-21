@@ -11,33 +11,33 @@ export const wordDesigns = [
   },
   {
     id: 2,
-    name: 'Classica',
+    name: 'Focus',
     description:
-      'Solo griglia e tastiera: scrivi direttamente nelle caselle, senza un campo separato. Un formato pulito e familiare.',
+      'Una parola grande al centro, indizi compatti e comandi in una barra. Una schermata leggera, concentrata sulla scrittura.',
   },
   {
     id: 3,
-    name: 'Compatta',
+    name: 'Studio',
     description:
-      'Una piccola console: griglia raccolta, comandi ravvicinati e tastiera su un pannello morbido. Meno spazio, più gioco.',
+      'Un ambiente luminoso e asimmetrico: scrittura a sinistra e una colonna dedicata agli indizi a destra.',
   },
   {
     id: 4,
-    name: 'Righe',
+    name: 'Bento',
     description:
-      'Ogni tentativo è una fascia numerata. Le lettere respirano su una superficie continua, senza trenta caselle separate.',
+      'Blocchi modulari, superfici morbide e tipografia decisa: una piccola dashboard della tua partita.',
   },
   {
     id: 5,
-    name: 'A schede',
+    name: 'Aria',
     description:
-      'Sei piccole schede, una per tentativo, disposte a coppie. Una vista panoramica per confrontare subito le parole.',
+      'Lettere sospese su uno sfondo sfumato, superfici traslucide e una tastiera discreta. Spazio e leggerezza.',
   },
   {
     id: 6,
-    name: 'Verde',
+    name: 'Editoriale',
     description:
-      'Una plancia verde profondo, lettere color crema e comandi chiari. La stessa palette con un carattere più deciso.',
+      'Numeri grandi, lettere senza cornice e un’impostazione da rivista contemporanea. Il gioco diventa tipografia.',
   },
 ] as const;
 
@@ -47,7 +47,12 @@ type DemoAttempt = { word: string; marks: string[] };
   selector: 'app-word-preview',
   imports: [FormsModule, RouterLink],
   templateUrl: './word-preview.html',
-  styleUrls: ['./word-preview.scss', './word-preview-variants.scss'],
+  styleUrls: [
+    './word-preview.scss',
+    './word-preview-variants.scss',
+    './word-preview-modern.scss',
+    './word-preview-modern-variants.scss',
+  ],
 })
 export class WordPreview {
   readonly variant = input(1);

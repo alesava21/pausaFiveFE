@@ -22,127 +22,272 @@
   Anteprima interattiva con dati dimostrativi. Puoi scrivere e inviare; gli indizi sono simulati e
   le tue partite restano invariate.
 </p>
-<section [class]="'demo v' + design().id" aria-label="Anteprima Parola segreta">
-  <div class="demo-top">
-    <span class="brand">parola<span>segreta.</span></span
-    ><span class="badge">La tua pausa di oggi</span>
-  </div>
-  <div class="demo-layout">
-    <div class="board-panel">
-      <div class="board-title">
-        <span>{{
-          variant() === 5 ? 'Le tue sei possibilità' : 'Ogni parola è un passo avanti'
-        }}</span
-        ><span>{{ attempts().length }}/6</span>
+@if (variant() === 1) {
+  <section [class]="'demo v' + design().id" aria-label="Anteprima Parola segreta">
+    <div class="demo-top">
+      <span class="brand">parola<span>segreta.</span></span
+      ><span class="badge">La tua pausa di oggi</span>
+    </div>
+    <div class="demo-layout">
+      <div class="board-panel">
+        <div class="board-title">
+          <span>{{
+            variant() === 5 ? 'Le tue sei possibilità' : 'Ogni parola è un passo avanti'
+          }}</span
+          ><span>{{ attempts().length }}/6</span>
+        </div>
+        <ol class="board" aria-label="Tentativi dimostrativi">
+          @for (row of rows; track row) {
+            @let attempt = attempts().at(row);
+            @let current = row === attempts().length;
+            <li
+              [class.current]="current"
+              [class.played]="!!attempt"
+              [class.future]="!attempt && !current"
+              [attr.aria-label]="'Tentativo ' + (row + 1)"
+            >
+              <span class="row-number" aria-hidden="true">0{{ row + 1 }}</span>
+              @for (column of columns; track column) {
+                <span
+                  [class]="'cell ' + (attempt?.marks?.[column] || '')"
+                  [class.ink]="current && !!draft[column]"
+                  >{{ attempt?.word?.[column] || (current ? draft[column]?.toUpperCase() : '') }}
+                  @if (attempt) {
+                    <span class="sr-only">{{
+                      attempt.marks[column] === 'hit'
+                        ? 'posizione corretta'
+                        : attempt.marks[column] === 'near'
+                          ? 'altra posizione'
+                          : 'assente'
+                    }}</span>
+                  }
+                </span>
+              }
+              @if (variant() === 2 && current) {
+                <input
+                  #editor
+                  class="inline-editor"
+                  aria-label="Scrivi la tua parola di cinque lettere"
+                  name="inline-draft"
+                  [(ngModel)]="draft"
+                  maxlength="5"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                  (keydown.enter)="submit(); $event.preventDefault()"
+                />
+              }
+            </li>
+          }
+        </ol>
+        <div class="legend">
+          <span><i class="hit"></i>Al posto giusto</span><span><i class="near"></i>Da spostare</span
+          ><span><i class="miss"></i>Assente</span>
+        </div>
       </div>
-      <ol class="board" aria-label="Tentativi dimostrativi">
-        @for (row of rows; track row) {
-          @let attempt = attempts().at(row);
-          @let current = row === attempts().length;
-          <li
-            [class.current]="current"
-            [class.played]="!!attempt"
-            [class.future]="!attempt && !current"
-            [attr.aria-label]="'Tentativo ' + (row + 1)"
+      <form class="composer" (ngSubmit)="submit()">
+        <div class="composer-heading">
+          <p class="eyebrow">Tocca a te</p>
+          <h2>{{ attempts().length < 6 ? 'Segui l’intuizione.' : 'Fine dell’anteprima.' }}</h2>
+          <p>Una parola, cinque lettere.<br />Prenditi il tuo tempo.</p>
+        </div>
+        @if (attempts().length < 6) {
+          @if (variant() !== 2) {
+            <label for="preview-word"
+              >La tua parola <span>tentativo {{ attempts().length + 1 }} di 6</span></label
+            >
+            <input
+              #editor
+              id="preview-word"
+              name="draft"
+              [(ngModel)]="draft"
+              maxlength="5"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="SCRIVI"
+              aria-describedby="preview-help"
+            />
+            <p id="preview-help" class="input-help">
+              Scrivi con la tastiera oppure usa i tasti qui sotto.
+            </p>
+          } @else {
+            <p class="input-help">
+              Scrivi direttamente nella riga evidenziata. Invio per confermare.
+            </p>
+          }
+          <div class="keyboard" aria-label="Tastiera dimostrativa">
+            @for (row of keys; track $index) {
+              <div>
+                @for (key of row; track key) {
+                  <button type="button" (click)="write(key)">{{ key }}</button>
+                }
+              </div>
+            }
+          </div>
+          <div class="actions">
+            <button
+              type="button"
+              class="erase"
+              (click)="write('⌫')"
+              aria-label="Cancella ultima lettera"
+            >
+              ⌫ Cancella</button
+            ><button type="submit" class="confirm">
+              Prova parola <span aria-hidden="true">↵</span>
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="confirm" (click)="reset()">Prova ancora</button>
+        }
+      </form>
+    </div>
+    <p class="message" role="status">{{ message() }}</p>
+  </section>
+} @else {
+  <section [class]="'modern m' + design().id" aria-label="Anteprima Parola segreta">
+    <header class="modern-top">
+      <span class="modern-brand">pausa<span>5</span><small>PAROLA SEGRETA</small></span
+      ><span class="live-badge"><i></i>La tua pausa quotidiana</span
+      ><button type="button" (click)="reset()" aria-label="Ricomincia l’anteprima">↻</button>
+    </header>
+    <div class="modern-layout">
+      <div class="writing-panel">
+        <div class="modern-heading">
+          <p>UNA PAROLA. CINQUE LETTERE.</p>
+          <h2>
+            {{
+              variant() === 6
+                ? 'La prossima intuizione.'
+                : variant() === 5
+                  ? 'Lascia spazio alle parole.'
+                  : variant() === 4
+                    ? 'Un piccolo colpo di genio.'
+                    : variant() === 3
+                      ? 'Trova il tuo ritmo.'
+                      : 'Segui l’intuizione.'
+            }}
+          </h2>
+        </div>
+        <div class="turn-meta">
+          <span
+            >TENTATIVO <strong>0{{ attempts().length < 6 ? attempts().length + 1 : 6 }}</strong
+            ><span class="total"> / 06</span></span
           >
-            <span class="row-number" aria-hidden="true">0{{ row + 1 }}</span>
+          <div class="progress" aria-label="Tentativi utilizzati">
+            @for (row of rows; track row) {
+              <i [class.used]="row < attempts().length"></i>
+            }
+          </div>
+        </div>
+        @if (attempts().length < 6) {
+          <div class="current hero-word">
             @for (column of columns; track column) {
               <span
-                [class]="'cell ' + (attempt?.marks?.[column] || '')"
-                [class.ink]="current && !!draft[column]"
-                >{{ attempt?.word?.[column] || (current ? draft[column]?.toUpperCase() : '') }}
-                @if (attempt) {
-                  <span class="sr-only">{{
-                    attempt.marks[column] === 'hit'
-                      ? 'posizione corretta'
-                      : attempt.marks[column] === 'near'
-                        ? 'altra posizione'
-                        : 'assente'
-                  }}</span>
-                }
-              </span>
+                class="letter"
+                [class.typed]="!!draft[column]"
+                [class.next]="draft.length === column"
+                >{{ draft[column]?.toUpperCase() || '' }}</span
+              >
             }
-            @if (variant() === 2 && current) {
-              <input
-                #editor
-                class="inline-editor"
-                aria-label="Scrivi la tua parola di cinque lettere"
-                name="inline-draft"
-                [(ngModel)]="draft"
-                maxlength="5"
-                autocomplete="off"
-                autocapitalize="characters"
-                spellcheck="false"
-                (keydown.enter)="submit(); $event.preventDefault()"
-              />
-            }
-          </li>
-        }
-      </ol>
-      <div class="legend">
-        <span><i class="hit"></i>Al posto giusto</span><span><i class="near"></i>Da spostare</span
-        ><span><i class="miss"></i>Assente</span>
-      </div>
-    </div>
-    <form class="composer" (ngSubmit)="submit()">
-      <div class="composer-heading">
-        <p class="eyebrow">Tocca a te</p>
-        <h2>{{ attempts().length < 6 ? 'Segui l’intuizione.' : 'Fine dell’anteprima.' }}</h2>
-        <p>Una parola, cinque lettere.<br />Prenditi il tuo tempo.</p>
-      </div>
-      @if (attempts().length < 6) {
-        @if (variant() !== 2) {
-          <label for="preview-word"
-            >La tua parola <span>tentativo {{ attempts().length + 1 }} di 6</span></label
-          >
-          <input
-            #editor
-            id="preview-word"
-            name="draft"
-            [(ngModel)]="draft"
-            maxlength="5"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            placeholder="SCRIVI"
-            aria-describedby="preview-help"
-          />
-          <p id="preview-help" class="input-help">
-            Scrivi con la tastiera oppure usa i tasti qui sotto.
+            <input
+              #editor
+              class="inline-editor"
+              aria-label="Scrivi la tua parola di cinque lettere"
+              name="modern-draft"
+              [(ngModel)]="draft"
+              maxlength="5"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              (keydown.enter)="submit(); $event.preventDefault()"
+            />
+          </div>
+          <p class="writing-hint">
+            Scrivi qui, oppure usa la tastiera. <span>Invio per confermare ↵</span>
           </p>
         } @else {
-          <p class="input-help">
-            Scrivi direttamente nella riga evidenziata. Invio per confermare.
-          </p>
+          <div class="demo-end">
+            <h3>Hai provato tutti i tentativi.</h3>
+            <button type="button" (click)="reset()">Ricomincia l’anteprima ↻</button>
+          </div>
         }
-        <div class="keyboard" aria-label="Tastiera dimostrativa">
-          @for (row of keys; track $index) {
-            <div>
-              @for (key of row; track key) {
-                <button type="button" (click)="write(key)">{{ key }}</button>
-              }
-            </div>
+        <div class="modern-controls">
+          <div class="modern-keyboard" aria-label="Tastiera dimostrativa">
+            @for (row of keys; track $index) {
+              <div>
+                @for (key of row; track key) {
+                  <button type="button" [disabled]="attempts().length === 6" (click)="write(key)">
+                    {{ key }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+          <div class="modern-actions">
+            <button
+              type="button"
+              class="backspace"
+              [disabled]="attempts().length === 6"
+              (click)="write('⌫')"
+              aria-label="Cancella ultima lettera"
+            >
+              ⌫<span> Cancella</span></button
+            ><button
+              type="button"
+              class="send"
+              [disabled]="attempts().length === 6"
+              (click)="submit()"
+            >
+              Conferma parola <span>↵</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <aside class="history-panel" aria-label="Tentativi precedenti">
+        <div class="history-heading">
+          <span>I tuoi indizi</span><span>{{ attempts().length }} parole</span>
+        </div>
+        <ol class="modern-history">
+          @for (attempt of attempts(); track $index) {
+            <li>
+              <span class="history-number">0{{ $index + 1 }}</span>
+              <div>
+                @for (column of columns; track column) {
+                  <span [class]="'history-letter ' + attempt.marks[column]"
+                    >{{ attempt.word[column]
+                    }}<span class="sr-only"
+                      >:
+                      {{
+                        attempt.marks[column] === 'hit'
+                          ? 'posizione corretta'
+                          : attempt.marks[column] === 'near'
+                            ? 'altra posizione'
+                            : 'assente'
+                      }}</span
+                    ></span
+                  >
+                }
+              </div>
+              <span class="history-check" aria-hidden="true">↗</span>
+            </li>
           }
+        </ol>
+        <div class="modern-legend">
+          <span><i class="hit"></i>Posizione giusta</span
+          ><span><i class="near"></i>Da spostare</span><span><i class="miss"></i>Assente</span>
         </div>
-        <div class="actions">
-          <button
-            type="button"
-            class="erase"
-            (click)="write('⌫')"
-            aria-label="Cancella ultima lettera"
-          >
-            ⌫ Cancella</button
-          ><button type="submit" class="confirm">
-            Prova parola <span aria-hidden="true">↵</span>
-          </button>
-        </div>
-      } @else {
-        <button type="button" class="confirm" (click)="reset()">Prova ancora</button>
-      }
-    </form>
-  </div>
-  <p class="message" role="status">{{ message() }}</p>
-</section>
+        @if (variant() === 4) {
+          <div class="bento-note">
+            <span>IL PROSSIMO PASSO</span><strong>{{ 6 - attempts().length }}</strong>
+            <p>Tentativi ancora a disposizione.<br />La prossima potrebbe essere quella giusta.</p>
+          </div>
+        }
+      </aside>
+    </div>
+    <p class="modern-message" role="status">{{ message() }}</p>
+  </section>
+}
 <footer class="preview-footer">
   <span>Quale ti somiglia di più? Dimmi il numero da 1 a 6.</span
   ><button type="button" (click)="reset()">Ripristina l’esempio</button>
