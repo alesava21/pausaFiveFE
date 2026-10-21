@@ -9,18 +9,23 @@ import { GameTile } from '../../shared/ui/game-tile';
       <p class="eyebrow">La tua prossima pausa</p>
       <h1>Tutti i giochi</h1>
       <p>Parole da scoprire, numeri da incastrare. Scegli la sfida che fa per te.</p>
-      <p>Stiamo preparando le prime partite: tutti i giochi saranno disponibili prossimamente.</p>
+      <p>
+        Parola del giorno e Parole illimitate sono disponibili. Gli altri giochi sono in
+        preparazione.
+      </p>
     </header>
     <div class="game-grid">
       <app-game-tile
         title="Parola del giorno"
         route="/parola-del-giorno"
+        [available]="true"
         mode="Sfida quotidiana"
         description="Una parola italiana di cinque lettere, sei tentativi e una nuova sfida ogni giorno."
       />
       <app-game-tile
         title="Parole illimitate"
         route="/parole-illimitate"
+        [available]="true"
         mode="Illimitato"
         description="Allenati con le parole: una nuova sfida ogni volta che vuoi."
       />

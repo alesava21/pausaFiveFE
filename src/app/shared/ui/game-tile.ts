@@ -15,9 +15,10 @@ import { GameArtwork } from './game-artwork';
           <h2>{{ title() }}</h2>
           <p>{{ description() }}</p>
           <div class="tile-bottom">
-            <span class="availability">Prossimamente</span>
+            <span class="availability">{{ available() ? 'Disponibile' : 'Prossimamente' }}</span>
             <span class="link-hint"
-              >Scopri <span class="sr-only">il gioco {{ title() }}</span
+              >{{ available() ? 'Gioca' : 'Scopri' }}
+              <span class="sr-only">il gioco {{ title() }}</span
               ><span aria-hidden="true">↗</span></span
             >
           </div>
@@ -94,4 +95,5 @@ export class GameTile {
   readonly description = input.required<string>();
   readonly route = input.required<string>();
   readonly mode = input('');
+  readonly available = input(false);
 }

@@ -53,6 +53,7 @@ import { GameTile } from '../../shared/ui/game-tile';
         <app-game-tile
           title="Parola del giorno"
           route="/parola-del-giorno"
+          [available]="true"
           mode="Parole · Sfida quotidiana"
           description="Cinque lettere, sei tentativi. Segui gli indizi e trova la parola italiana del giorno."
         />
