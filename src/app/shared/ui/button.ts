@@ -1,9 +1,13 @@
 import { Component, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-button',
+  imports: [MatButtonModule],
   template: `
     <button
+      [matButton]="variant() === 'secondary' ? 'outlined' : 'filled'"
+      [disableRipple]="true"
       [type]="type()"
       [disabled]="disabled() || busy()"
       [class.secondary]="variant() === 'secondary'"

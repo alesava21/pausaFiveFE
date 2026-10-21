@@ -1,20 +1,59 @@
+@use '@angular/material' as mat;
+
 $breakpoint-md: 40rem;
 $breakpoint-lg: 64rem;
 
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$green-palette,
+        tertiary: mat.$orange-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: 'system-ui',
+        brand-family: 'system-ui',
+      ),
+      density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: #285743,
+      on-primary: #ffffff,
+      surface: #fffdf8,
+      on-surface: #25382e,
+      outline: #cbd3c6,
+    )
+  );
+  @include mat.card-overrides(
+    (
+      outlined-container-shape: 24px,
+    )
+  );
+  @include mat.button-overrides(
+    (
+      filled-container-shape: 12px,
+      outlined-container-shape: 12px,
+    )
+  );
+}
+
 :root {
   color-scheme: light;
-  --color-bg: #f6f8f4;
-  --color-surface: #ffffff;
-  --color-text: #17291f;
-  --color-muted: #526057;
-  --color-primary: #185b3b;
-  --color-primary-hover: #10452c;
+  --color-bg: #f7f7ef;
+  --color-surface: #fffdf8;
+  --color-text: #25382e;
+  --color-muted: #5d685e;
+  --color-primary: #285743;
+  --color-primary-hover: #1c4332;
   --color-on-primary: #ffffff;
-  --color-border: #b8c8bd;
-  --color-soft: #eaf2e9;
+  --color-border: #cbd3c6;
+  --color-soft: #eaf0e3;
   --color-error: #8c2525;
   --color-warning: #6e4900;
-  --color-success: #185b3b;
+  --color-success: #285743;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -26,9 +65,11 @@ $breakpoint-lg: 64rem;
   --text-base: 1rem;
   --text-lg: 1.25rem;
   --radius-sm: 0.5rem;
-  --radius-lg: 1rem;
-  --content-width: 68rem;
+  --radius-lg: 1.5rem;
+  --content-width: 75rem;
   --touch-target: 2.75rem;
+  --color-accent: #9e482b;
+  --shadow-card: 0 3px 0 rgb(37 56 46 / 3%), 0 10px 30px rgb(37 56 46 / 4%);
 }
 
 * {
@@ -70,7 +111,8 @@ h3 {
   overflow-wrap: anywhere;
 }
 h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  letter-spacing: -0.045em;
   margin-block: 0 var(--space-6);
 }
 h2 {
@@ -128,4 +170,35 @@ svg {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-block: 0 1rem;
+}
+.eyebrow::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.page-intro {
+  max-width: 48rem;
+  margin-bottom: 2.5rem;
+}
+.page-intro p:last-child {
+  color: var(--color-muted);
+  font-size: 1.125rem;
+}
+::selection {
+  background: #dbe9c7;
+  color: #25382e;
 }

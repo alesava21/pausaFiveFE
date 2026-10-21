@@ -56,10 +56,22 @@ legge automaticamente `.env`. Non inserire segreti nella configurazione Angular.
 Il frontend ha il proprio repository Git; board e report sono nel backend.
 La licenza del progetto è da scegliere in `../PausaFiveBE/LICENSE-TODO.md`.
 
-## Componenti condivisi (TASK-006 in revisione)
+## Componenti condivisi (TASK-006)
 
 Widget standalone in `src/app/shared/ui`, Header/Navigation/Footer in core/layout.
 Token in styles.scss, focus nativo, feedback testuali e reduced-motion.
-21 test, lint e build passati; il collaudo visivo 320/375/1280 è ancora pendente.
+21 test, lint e build passati; il proprietario ha confermato il collaudo visivo.
 Dettagli nel kit: `docs/16-DESIGN-SYSTEM.md` e report TASK-006.
 Dopo il cambio dell'entry globale CSS in SCSS riavviare il server di sviluppo.
+
+
+## Restyle con Angular Material
+
+Angular Material e CDK **22.2.4** (MIT), pin esatto nel lockfile. Tema light
+personalizzato tramite le API Sass pubbliche in `styles.scss`; font di sistema,
+nessun font o asset da CDN. Card e pulsanti condivisi usano Material; le anteprime
+originali di parole, Sudoku e 2048 sono HTML/CSS decorative, non partite attive.
+Homepage e catalogo mantengono l’indicazione Prossimamente. Ripple disabilitato
+sui pulsanti; focus visibile, touch target e reduced-motion preservati.
+Nessun nuovo server necessario: riavviare il proprio `npm start` dopo l’installazione.
+Report del restyle nel kit condiviso: `docs/reports/TASK-006A.md`.

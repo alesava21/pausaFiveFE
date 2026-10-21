@@ -27,6 +27,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-sm);
       text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
     }
     a:hover,
     a.active {
@@ -34,6 +36,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     }
     a.active {
       text-decoration: underline;
+      text-underline-offset: 0.3em;
       font-weight: 650;
     }
   `,

@@ -5,8 +5,11 @@ import { EmptyState } from '../../shared/ui/empty-state';
   selector: 'app-game-2048-page',
   imports: [EmptyState],
   template: `
-    <h1>{{ heading() }}</h1>
-    <p>{{ description() }}</p>
+    <div class="page-intro">
+      <p class="eyebrow">La tua pausa di logica</p>
+      <h1>{{ heading() }}</h1>
+      <p>{{ description() }}</p>
+    </div>
     <app-empty-state
       heading="Prossimamente"
       message="La partita sarà disponibile a breve. Intanto puoi scoprirne le regole."

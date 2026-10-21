@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
   selector: 'app-card',
-  template: `<div class="card"><ng-content /></div>`,
+  imports: [MatCardModule],
+  template: `<mat-card appearance="outlined" class="card"><ng-content /></mat-card>`,
   styles: `
     :host {
       display: block;
@@ -15,6 +17,8 @@ import { Component } from '@angular/core';
       border-radius: var(--radius-lg);
       background: var(--color-surface);
       overflow-wrap: anywhere;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
     }
   `,
 })

@@ -1,18 +1,27 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from './card';
+import { GameArtwork } from './game-artwork';
 
 @Component({
   selector: 'app-game-tile',
-  imports: [RouterLink, Card],
+  imports: [RouterLink, Card, GameArtwork],
   template: `
     <app-card>
       <a [routerLink]="route()" class="tile">
-        <span class="mode">{{ mode() }}</span>
-        <h2>{{ title() }}</h2>
-        <p>{{ description() }}</p>
-        <span class="availability">Prossimamente</span>
-        <span class="link-hint">Scopri il gioco <span aria-hidden="true">→</span></span>
+        <app-game-artwork [kind]="artwork()" />
+        <div class="tile-content">
+          <span class="mode">{{ mode() }}</span>
+          <h2>{{ title() }}</h2>
+          <p>{{ description() }}</p>
+          <div class="tile-bottom">
+            <span class="availability">Prossimamente</span>
+            <span class="link-hint"
+              >Scopri <span class="sr-only">il gioco {{ title() }}</span
+              ><span aria-hidden="true">↗</span></span
+            >
+          </div>
+        </div>
       </a>
     </app-card>
   `,
@@ -24,15 +33,32 @@ import { Card } from './card';
     .tile {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       height: 100%;
-      padding: var(--space-6);
       color: var(--color-text);
       text-decoration: none;
       border-radius: var(--radius-lg);
     }
-    .tile:hover {
-      background: var(--color-soft);
+    .tile:hover .link-hint {
+      text-decoration: underline;
+    }
+    app-game-artwork {
+      width: 100%;
+    }
+    .tile-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: var(--space-6);
+    }
+    .tile-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: auto;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--color-soft);
     }
     h2 {
       color: var(--color-primary);
@@ -42,25 +68,28 @@ import { Card } from './card';
       margin-block: var(--space-2) var(--space-6);
     }
     .link-hint {
-      margin-top: var(--space-3);
       color: var(--color-primary);
-      text-decoration: underline;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      display: flex;
+      gap: 0.5rem;
     }
     .mode {
       font-size: var(--text-sm);
       color: var(--color-muted);
+      font-weight: 650;
     }
     .availability {
-      margin-top: auto;
       font-size: var(--text-sm);
       font-weight: 650;
-      border: 1px solid var(--color-border);
+      background: var(--color-soft);
       padding: var(--space-1) var(--space-3);
       border-radius: var(--radius-sm);
     }
   `,
 })
 export class GameTile {
+  readonly artwork = input<'word' | 'sudoku' | 'merge'>('word');
   readonly title = input.required<string>();
   readonly description = input.required<string>();
   readonly route = input.required<string>();

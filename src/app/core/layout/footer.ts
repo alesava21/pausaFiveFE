@@ -5,8 +5,11 @@ import { RouterLink } from '@angular/router';
   selector: 'app-footer',
   imports: [RouterLink],
   template: `<footer>
-    <div class="container">
-      <p>Una pausa di parole, numeri e logica.</p>
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <a routerLink="/" aria-label="Pausa5, pagina iniziale">pausa<span>5</span></a>
+        <p>Una pausa di parole, numeri e logica.</p>
+      </div>
       <nav aria-label="Informazioni">
         <a routerLink="/privacy">Privacy</a><a routerLink="/cookie-policy">Cookie</a
         ><a routerLink="/contatti">Contatti</a>
@@ -18,9 +21,31 @@ import { RouterLink } from '@angular/router';
   </footer>`,
   styles: `
     footer {
+      background: var(--color-surface);
       border-top: 1px solid var(--color-border);
-      padding-block: var(--space-6);
+      padding-block: var(--space-8);
       padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
+    }
+    .footer-content {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem 2rem;
+    }
+    .footer-brand > a {
+      font-weight: 800;
+      font-size: 1.6rem;
+      text-decoration: none;
+      letter-spacing: -0.06em;
+    }
+    .footer-brand > a span {
+      color: var(--color-accent);
+    }
+    .footer-brand p {
+      margin-block: 0.25rem;
+      color: var(--color-muted);
+      font-size: 0.8rem;
     }
     nav {
       display: flex;
@@ -35,6 +60,11 @@ import { RouterLink } from '@angular/router';
     .note {
       color: var(--color-muted);
       font-size: var(--text-sm);
+      flex-basis: 100%;
+      max-width: none;
+      border-top: 1px solid var(--color-border);
+      padding-top: var(--space-4);
+      margin-bottom: 0;
     }
   `,
 })
