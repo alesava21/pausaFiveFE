@@ -1,56 +1,17 @@
 import { Component } from '@angular/core';
-import { GameTile } from '../../shared/ui/game-tile';
+import { CatalogGames } from './catalog-games';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [GameTile],
+  imports: [CatalogGames],
   template: `
     <header class="page-intro">
       <p class="eyebrow">La tua prossima pausa</p>
       <h1>Tutti i giochi</h1>
       <p>Parole da scoprire, numeri da incastrare. Scegli la sfida che fa per te.</p>
-      <p>
-        Parola del giorno e Parole illimitate sono disponibili. Gli altri giochi sono in
-        preparazione.
-      </p>
+      <p>Una sfida quotidiana o una partita senza limiti: trova il tuo ritmo.</p>
     </header>
-    <div class="game-grid">
-      <app-game-tile
-        title="Parola del giorno"
-        route="/parola-del-giorno"
-        [available]="true"
-        mode="Sfida quotidiana"
-        description="Una parola italiana di cinque lettere, sei tentativi e una nuova sfida ogni giorno."
-      />
-      <app-game-tile
-        title="Parole illimitate"
-        route="/parole-illimitate"
-        [available]="true"
-        mode="Illimitato"
-        description="Allenati con le parole: una nuova sfida ogni volta che vuoi."
-      />
-      <app-game-tile
-        title="Sudoku del giorno"
-        artwork="sudoku"
-        route="/sudoku-del-giorno"
-        mode="Sfida quotidiana"
-        description="La stessa griglia per tutti, con una nuova sfida ogni giorno."
-      />
-      <app-game-tile
-        title="Sudoku online"
-        artwork="sudoku"
-        route="/sudoku-online"
-        mode="Illimitato"
-        description="Riempi la griglia con i numeri da uno a nove, senza ripetizioni."
-      />
-      <app-game-tile
-        title="2048"
-        artwork="merge"
-        route="/2048"
-        mode="Illimitato"
-        description="Unisci le tessere uguali e prova a raggiungere il numero 2048."
-      />
-    </div>
+    <app-catalog-games />
   `,
 })
 export class CatalogPage {}
