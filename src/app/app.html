@@ -1,4 +1,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <app-header />
-<main id="contenuto" class="container" tabindex="-1"><router-outlet /></main>
+<main id="contenuto" class="container" tabindex="-1">
+  <app-api-error-notice />
+  <router-outlet />
+</main>
 <app-footer />

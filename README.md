@@ -75,3 +75,33 @@ Homepage e catalogo mantengono l’indicazione Prossimamente. Ripple disabilitat
 sui pulsanti; focus visibile, touch target e reduced-motion preservati.
 Nessun nuovo server necessario: riavviare il proprio `npm start` dopo l’installazione.
 Report del restyle nel kit condiviso: `docs/reports/TASK-006A.md`.
+
+
+## Client HTTP (TASK-007)
+
+`provideApi()` configura HttpClient e l’interceptor in `core/api`. I DTO pubblici
+seguono `docs/03-API-CONTRACTS.md` nel kit backend; nessuna chiamata parte
+all’avvio o durante il prerender delle pagine attuali.
+
+Per le mutazioni `/api/v1` same-origin, `CsrfService` carica pigramente
+`GET /api/v1/csrf` e conserva il token soltanto in memoria. Le richieste concorrenti
+condividono il caricamento; header `X-CSRF-TOKEN` gestito centralmente, cookie
+lasciati al browser e nessuna lettura JS. Transfer cache HTTP disabilitata sulle
+API; timeout predefinito 10 secondi per richiesta.
+
+Retry massimo due volte, con attese 250/500 ms, solo per status 0/502/503/504:
+GET oppure POST `/sessions/{id}/word/guesses` con `Idempotency-Key` non vuota.
+La chiave deve essere fornita dal consumer per la singola mossa; non viene
+inventata dall’interceptor e resta identica nei retry. Nessun retry su 4xx,
+429 o altre scritture, anche se hanno una chiave non supportata dal contratto.
+Dopo 401/403 il token rifiutato viene scartato, senza ripetere la mossa.
+
+Gli errori Problem Details sono riconosciuti dal Content-Type e dalla forma;
+`ApiError` conserva soltanto status/kind e messaggio italiano locale. Body,
+URL, detail/title/code/traceId remoti non sono mostrati o conservati nell’errore.
+Un avviso accessibile nella shell può essere chiuso senza reinviare la richiesta.
+
+L’endpoint CSRF e le sessioni guest reali saranno implementati nel TASK-015:
+questo task verifica il client con HttpTestingController, non dichiara
+un’integrazione con endpoint ancora assenti. Proxy locale previsto nel TASK-009;
+nessuna chiamata cross-origin con credenziali abilitata.
