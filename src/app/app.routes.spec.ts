@@ -41,6 +41,16 @@ describe('Rotte M1', () => {
     expect(TestBed.inject(Meta).getTag('name="description"')?.content).toBeTruthy();
   });
 
+  it.each([1, 2, 3, 4, 5, 6])(
+    'apre l’anteprima %i senza chiamate al backend e con noindex',
+    async (variant) => {
+      const harness = await RouterTestingHarness.create(`/anteprime/parola/${variant}`);
+      expect(harness.routeNativeElement?.querySelector(`.v${variant}`)).toBeTruthy();
+      expect(harness.routeNativeElement?.querySelectorAll('.design-picker a')).toHaveLength(6);
+      expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toContain('noindex');
+    },
+  );
+
   it('gestisce URL sconosciuti e rimuove noindex tornando a una pagina pubblica', async () => {
     const harness = await RouterTestingHarness.create('/non-esiste');
     expect(TestBed.inject(Router).url).toBe('/404');

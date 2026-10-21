@@ -1,0 +1,127 @@
+<header class="preview-header">
+  <a routerLink="/parole-illimitate">← Torna al gioco</a>
+  <span>Laboratorio grafico · 6 proposte</span>
+</header>
+<nav class="design-picker" aria-label="Scegli un’alternativa grafica">
+  @for (item of designs; track item.id) {
+    <a
+      [routerLink]="'/anteprime/parola/' + item.id"
+      [class.selected]="variant() === item.id"
+      [attr.aria-current]="variant() === item.id ? 'page' : null"
+      ><span>0{{ item.id }}</span
+      >{{ item.name }}</a
+    >
+  }
+</nav>
+<div class="design-intro">
+  <p class="eyebrow">Proposta 0{{ design().id }}</p>
+  <h1>{{ design().name }}</h1>
+  <p>{{ design().description }}</p>
+</div>
+<p class="demo-notice">
+  Anteprima interattiva con dati dimostrativi. Puoi scrivere e inviare; gli indizi sono simulati e
+  le tue partite restano invariate.
+</p>
+<section [class]="'demo v' + design().id" aria-label="Anteprima Parola segreta">
+  <div class="demo-top">
+    <span class="brand">parola<span>segreta.</span></span
+    ><span class="badge">La tua pausa di oggi</span>
+  </div>
+  <div class="demo-layout">
+    <div class="board-panel">
+      <div class="board-title">
+        <span>{{ variant() === 3 ? 'I tuoi indizi' : 'Ogni parola è un passo avanti' }}</span
+        ><span>{{ attempts().length }}/6</span>
+      </div>
+      <ol class="board" aria-label="Tentativi dimostrativi">
+        @for (row of rows; track row) {
+          @let attempt = attempts().at(row);
+          @let current = row === attempts().length;
+          <li
+            [class.current]="current"
+            [class.played]="!!attempt"
+            [class.future]="!attempt && !current"
+            [attr.aria-label]="'Tentativo ' + (row + 1)"
+          >
+            <span class="row-number" aria-hidden="true">0{{ row + 1 }}</span>
+            @for (column of columns; track column) {
+              <span
+                [class]="'cell ' + (attempt?.marks?.[column] || '')"
+                [class.ink]="current && !!draft[column]"
+                >{{ attempt?.word?.[column] || (current ? draft[column]?.toUpperCase() : '') }}
+                @if (attempt) {
+                  <span class="sr-only">{{
+                    attempt.marks[column] === 'hit'
+                      ? 'posizione corretta'
+                      : attempt.marks[column] === 'near'
+                        ? 'altra posizione'
+                        : 'assente'
+                  }}</span>
+                }
+              </span>
+            }
+          </li>
+        }
+      </ol>
+      <div class="legend">
+        <span><i class="hit"></i>Al posto giusto</span><span><i class="near"></i>Da spostare</span
+        ><span><i class="miss"></i>Assente</span>
+      </div>
+    </div>
+    <form class="composer" (ngSubmit)="submit()">
+      <div class="composer-heading">
+        <p class="eyebrow">Tocca a te</p>
+        <h2>{{ attempts().length < 6 ? 'Segui l’intuizione.' : 'Fine dell’anteprima.' }}</h2>
+        <p>Una parola, cinque lettere.<br />Prenditi il tuo tempo.</p>
+      </div>
+      @if (attempts().length < 6) {
+        <label for="preview-word"
+          >La tua parola <span>tentativo {{ attempts().length + 1 }} di 6</span></label
+        >
+        <input
+          #editor
+          id="preview-word"
+          name="draft"
+          [(ngModel)]="draft"
+          maxlength="5"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="SCRIVI"
+          aria-describedby="preview-help"
+        />
+        <p id="preview-help" class="input-help">
+          Scrivi con la tastiera oppure usa i tasti qui sotto.
+        </p>
+        <div class="keyboard" aria-label="Tastiera dimostrativa">
+          @for (row of keys; track $index) {
+            <div>
+              @for (key of row; track key) {
+                <button type="button" (click)="write(key)">{{ key }}</button>
+              }
+            </div>
+          }
+        </div>
+        <div class="actions">
+          <button
+            type="button"
+            class="erase"
+            (click)="write('⌫')"
+            aria-label="Cancella ultima lettera"
+          >
+            ⌫ Cancella</button
+          ><button type="submit" class="confirm">
+            Prova parola <span aria-hidden="true">↵</span>
+          </button>
+        </div>
+      } @else {
+        <button type="button" class="confirm" (click)="reset()">Prova ancora</button>
+      }
+    </form>
+  </div>
+  <p class="message" role="status">{{ message() }}</p>
+</section>
+<footer class="preview-footer">
+  <span>Quale ti somiglia di più? Dimmi il numero da 1 a 6.</span
+  ><button type="button" (click)="reset()">Ripristina l’esempio</button>
+</footer>

@@ -1,0 +1,250 @@
+:host {
+  display: block;
+  max-width: 68rem;
+  margin: auto;
+}
+.preview-header,
+.demo-top,
+.board-title,
+.actions,
+.preview-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.preview-header,
+.preview-footer {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  flex-wrap: wrap;
+}
+.design-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin: 1.5rem 0 2rem;
+  a {
+    padding: 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.8rem;
+    text-decoration: none;
+    font-size: 0.8rem;
+    span {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: 750;
+    }
+  }
+  .selected {
+    background: var(--color-primary);
+    color: white;
+  }
+}
+.design-intro {
+  h1 {
+    font-size: 2.4rem;
+    margin-bottom: 0.6rem;
+  }
+  > p:last-child {
+    color: var(--color-muted);
+  }
+  .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+}
+.demo-notice {
+  max-width: none;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+.demo {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 2rem;
+  border-radius: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: var(--shadow-card);
+}
+.demo-top {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.brand {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-size: 1.5rem;
+  span {
+    color: var(--color-primary);
+  }
+}
+.badge {
+  font-size: 0.7rem;
+  border-radius: 2rem;
+  background: var(--color-soft);
+  padding: 0.4rem 0.8rem;
+}
+.demo-layout {
+  display: grid;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+.board-panel {
+  min-width: 0;
+}
+.board-title {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-bottom: 1rem;
+}
+.board {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 20rem;
+  display: grid;
+  gap: 0.45rem;
+  li {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+}
+.row-number {
+  display: none;
+}
+.cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  font-size: 1.6rem;
+  font-weight: 750;
+  line-height: 1;
+}
+.current .cell {
+  border: 2px solid var(--color-primary);
+  background: var(--color-surface);
+}
+.ink {
+  color: var(--color-primary);
+}
+.hit {
+  background: #254e35;
+  color: white;
+}
+.near {
+  background: #745000;
+  color: white;
+}
+.miss {
+  background: #4c5350;
+  color: white;
+}
+.legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  font-size: 0.65rem;
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  i {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+  }
+}
+.composer {
+  min-width: 0;
+  max-width: 32rem;
+  width: 100%;
+  margin: auto;
+  label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    font-weight: 650;
+    span {
+      font-weight: 400;
+      color: var(--color-muted);
+    }
+  }
+  input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.6rem;
+    padding: 0.6rem;
+    text-align: center;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-top: 0.5rem;
+  }
+}
+.composer-heading {
+  display: none;
+}
+.input-help {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+.keyboard {
+  display: grid;
+  gap: 0.3rem;
+  > div {
+    display: flex;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+  button {
+    min-width: 0;
+    flex: 1;
+    max-width: 2.7rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    background: var(--color-soft);
+    color: var(--color-text);
+    border-radius: 0.4rem;
+    font-weight: 650;
+    font-size: 0.8rem;
+  }
+}
+.actions {
+  margin-top: 1rem;
+}
+.confirm,
+.erase,
+.preview-footer button {
+  min-height: 2.75rem;
+  border-radius: 0.6rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+}
+.confirm {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+.message {
+  text-align: center;
+  font-size: 0.8rem;
+  margin-bottom: 0;
+  &:empty {
+    display: none;
+  }
+}

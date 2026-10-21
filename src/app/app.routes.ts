@@ -99,5 +99,17 @@ export const routes: Routes = [
     () => import('./features/info/not-found-page').then((page) => page.NotFoundPage),
     true,
   ),
+  ...[1, 2, 3, 4, 5, 6].map((variant): Route => ({
+    path: `anteprime/parola/${variant}`,
+    title: `Parola segreta: proposta ${variant}`,
+    data: {
+      variant,
+      noindex: true,
+      description: 'Confronta sei alternative grafiche interattive di Parola segreta.',
+    },
+    loadComponent: () =>
+      import('./features/word-preview/word-preview').then((page) => page.WordPreview),
+  })),
+  { path: 'anteprime/parola', redirectTo: 'anteprime/parola/1', pathMatch: 'full' },
   { path: '**', redirectTo: '404' },
 ];
