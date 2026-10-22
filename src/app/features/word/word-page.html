@@ -115,7 +115,11 @@
         </p>
       }
       @if (mode() === 'ENDLESS') {
-        <app-button [busy]="busy()" (activated)="open(true)">Nuova parola</app-button>
+        @if (startUncertain()) {
+          <app-button [busy]="busy()" (activated)="open()">Recupera partita</app-button>
+        } @else {
+          <app-button [busy]="busy()" (activated)="open(true)">Nuova parola</app-button>
+        }
       } @else if (resetReached()) {
         <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
       } @else {
@@ -129,6 +133,19 @@
     }
   }
   <p class="message" role="status" aria-live="polite">{{ message() }}</p>
+  @if (mode() === 'ENDLESS') {
+    <p class="resume-note">
+      Puoi riprendere la partita su questo browser. Per giocare serve una connessione.
+    </p>
+  }
+  <nav class="word-links" aria-label="Altre modalità e regole">
+    @if (mode() === 'ENDLESS') {
+      <a routerLink="/parola-del-giorno">Gioca alla parola del giorno</a>
+    } @else {
+      <a routerLink="/parole-illimitate">Gioca senza limiti</a>
+    }
+    <a routerLink="/come-si-gioca">Come si gioca</a>
+  </nav>
   <p class="credits">
     Lessico derivato da
     <a href="https://docs.sslmit.unibo.it/doku.php?id=resources%3Amorph-it">Morph-it!</a>, Marco

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { GameMode, LetterEvaluation, WordSessionDto } from '../../core/api/api-contracts';
 import { ApiError } from '../../core/api/api-error';
@@ -20,7 +21,7 @@ import { WordClient } from './word-client';
 
 @Component({
   selector: 'app-word-page',
-  imports: [FormsModule, Button],
+  imports: [FormsModule, RouterLink, Button],
   templateUrl: './word-page.html',
   styleUrl: './word-page.scss',
 })
@@ -33,6 +34,7 @@ export class WordPage {
   readonly message = signal('');
   readonly ready = signal(false);
   readonly pending = signal<{ guess: string; key: string } | null>(null);
+  readonly startUncertain = signal(false);
   private readonly now = signal(Date.now());
   readonly resetReached = computed(() => {
     const game = this.game();
@@ -87,12 +89,25 @@ export class WordPage {
   }
 
   open(newGame = false): void {
-    if (this.busy()) return;
+    if (
+      this.busy() ||
+      (newGame &&
+        (this.mode() !== 'ENDLESS' ||
+          !['WON', 'LOST'].includes(this.game()?.status ?? '') ||
+          this.startUncertain()))
+    )
+      return;
     this.busy.set(true);
     this.message.set('');
     this.client
       .open(this.mode(), newGame)
       .pipe(
+        catchError((error: unknown) => {
+          // Another tab, or a lost response, may have already started the next game.
+          if (newGame && error instanceof ApiError && error.status === 409)
+            return this.client.open('ENDLESS', false);
+          return throwError(() => error);
+        }),
         takeUntilDestroyed(this.destroy),
         finalize(() => this.busy.set(false)),
       )
@@ -100,10 +115,21 @@ export class WordPage {
         next: (game) => {
           this.now.set(Date.now());
           this.game.set(game);
+          this.startUncertain.set(false);
           this.pending.set(null);
           this.guess = '';
         },
-        error: (error: unknown) => this.fail(error),
+        error: (error: unknown) => {
+          if (
+            newGame &&
+            !(error instanceof ApiError && [400, 401, 403, 404, 422, 429].includes(error.status))
+          ) {
+            this.startUncertain.set(true);
+            this.message.set(
+              'Apertura non confermata. Controlla la connessione e premi «Recupera partita».',
+            );
+          } else this.fail(error);
+        },
       });
   }
 

@@ -202,6 +202,23 @@ button:disabled {
   color: var(--color-muted);
   text-align: center;
 }
+.resume-note {
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+.word-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.8rem;
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+}
 @media (max-width: 47rem) {
   .word-game {
     padding: 1rem;

@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Meta, Title } from '@angular/platform-browser';
 import { Router, TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
@@ -61,5 +61,43 @@ describe('Rotte M1', () => {
     expect(TestBed.inject(Meta).getTag('name="robots"')).toBeNull();
     await harness.navigateByUrl('/parole-illimitate');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Parole illimitate');
+  });
+  it('passa da endless a daily senza trasportare sessione o soluzione della partita illimitata', async () => {
+    const harness = await RouterTestingHarness.create('/parole-illimitate');
+    const http = TestBed.inject(HttpTestingController);
+    const state = {
+      puzzleId: 'puzzle-endless',
+      mode: 'ENDLESS',
+      status: 'WON',
+      sessionId: 'endless-session',
+      attempts: [],
+      remainingAttempts: 5,
+      serverDate: '2026-10-22',
+      nextResetAt: new Date(Date.now() + 86400_000).toISOString(),
+      solution: 'GATTO',
+    };
+    const endless = http.expectOne('/api/v1/endless/word/sessions');
+    expect(endless.request.body).toEqual({ newGame: false });
+    endless.flush(state);
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('GATTO');
+    await harness.navigateByUrl('/parola-del-giorno');
+    const daily = http.expectOne('/api/v1/daily/word/sessions');
+    expect(daily.request.body).toEqual({});
+    daily.flush({
+      ...state,
+      solution: undefined,
+      mode: 'DAILY',
+      sessionId: 'daily-session',
+      status: 'ACTIVE',
+      remainingAttempts: 6,
+    });
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).not.toContain('GATTO');
+    expect(harness.routeNativeElement?.querySelector('#word-guess')).not.toBeNull();
+    expect(
+      harness.routeNativeElement?.querySelector('a[href="/parole-illimitate"]'),
+    ).not.toBeNull();
+    http.verify();
   });
 });
