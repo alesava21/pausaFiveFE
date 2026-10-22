@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   afterNextRender,
@@ -11,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize, switchMap } from 'rxjs';
+import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { GameMode, LetterEvaluation, WordSessionDto } from '../../core/api/api-contracts';
 import { ApiError } from '../../core/api/api-error';
 import { Button } from '../../shared/ui/button';
@@ -32,6 +33,30 @@ export class WordPage {
   readonly message = signal('');
   readonly ready = signal(false);
   readonly pending = signal<{ guess: string; key: string } | null>(null);
+  private readonly now = signal(Date.now());
+  readonly resetReached = computed(() => {
+    const game = this.game();
+    return game?.mode === 'DAILY' && this.now() >= Date.parse(game.nextResetAt);
+  });
+  readonly countdown = computed(() => {
+    const reset = this.game()?.nextResetAt;
+    if (!reset) return '';
+    const seconds = Math.max(0, Math.ceil((Date.parse(reset) - this.now()) / 1000));
+    if (!Number.isFinite(seconds)) return '';
+    return [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60]
+      .map((part) => String(part).padStart(2, '0'))
+      .join(':');
+  });
+  readonly resetTime = computed(() => {
+    const reset = Date.parse(this.game()?.nextResetAt ?? '');
+    return Number.isFinite(reset)
+      ? new Intl.DateTimeFormat('it-IT', {
+          timeZone: 'Europe/Rome',
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(reset)
+      : '';
+  });
   guess = '';
   readonly emptyRows = [0, 1, 2, 3, 4, 5];
   readonly columns = [0, 1, 2, 3, 4];
@@ -42,10 +67,20 @@ export class WordPage {
   constructor() {
     afterRenderEffect(() => {
       const input = this.guessInput()?.nativeElement;
-      if (this.ready() && !this.busy() && !this.pending() && input)
+      if (this.ready() && !this.busy() && !this.pending() && !this.resetReached() && input)
         input.focus({ preventScroll: true });
     });
     afterNextRender(() => {
+      const tick = () => this.now.set(Date.now());
+      const timer = window.setInterval(tick, 1000);
+      // Refresh immediately on return from a suspended/background mobile tab.
+      document.addEventListener('visibilitychange', tick);
+      window.addEventListener('focus', tick);
+      this.destroy.onDestroy(() => {
+        window.clearInterval(timer);
+        document.removeEventListener('visibilitychange', tick);
+        window.removeEventListener('focus', tick);
+      });
       this.ready.set(true);
       this.open();
     });
@@ -63,6 +98,7 @@ export class WordPage {
       )
       .subscribe({
         next: (game) => {
+          this.now.set(Date.now());
           this.game.set(game);
           this.pending.set(null);
           this.guess = '';
@@ -73,7 +109,8 @@ export class WordPage {
 
   submit(): void {
     const game = this.game();
-    if (!game || game.status !== 'ACTIVE' || this.busy()) return;
+    this.now.set(Date.now());
+    if (!game || game.status !== 'ACTIVE' || this.busy() || this.resetReached()) return;
     if (!this.pending()) {
       if (this.guess.length !== 5 || !/^[A-Za-z]{5}$/.test(this.guess)) {
         this.message.set('Inserisci cinque lettere A-Z, senza spazi o accenti.');
@@ -89,6 +126,15 @@ export class WordPage {
       .guess(game.sessionId, pending.guess, pending.key)
       .pipe(
         switchMap(() => this.client.session(game.sessionId)),
+        catchError((error: unknown) => {
+          // A 409 can mean expiry or completion in another tab. Read authoritative state.
+          if (error instanceof ApiError && error.status === 409)
+            return this.client.session(game.sessionId).pipe(
+              tap((state) => this.game.set(state)),
+              switchMap(() => throwError(() => error)),
+            );
+          return throwError(() => error);
+        }),
         takeUntilDestroyed(this.destroy),
         finalize(() => this.busy.set(false)),
       )
@@ -98,11 +144,13 @@ export class WordPage {
           this.pending.set(null);
           this.guess = '';
           this.message.set(
-            state.status === 'WON'
-              ? 'Hai indovinato!'
-              : state.status === 'LOST'
-                ? 'Tentativi terminati.'
-                : `Tentativo registrato. Ne restano ${state.remainingAttempts}.`,
+            state.status === 'EXPIRED'
+              ? 'La sfida è scaduta. Apri la sfida di oggi per continuare.'
+              : state.status === 'WON'
+                ? 'Hai indovinato!'
+                : state.status === 'LOST'
+                  ? 'Tentativi terminati.'
+                  : `Tentativo registrato. Ne restano ${state.remainingAttempts}.`,
           );
         },
         error: (error: unknown) => {
@@ -117,7 +165,8 @@ export class WordPage {
   }
 
   erase(): void {
-    if (this.busy() || this.pending() || this.game()?.status !== 'ACTIVE') return;
+    if (this.busy() || this.pending() || this.resetReached() || this.game()?.status !== 'ACTIVE')
+      return;
     this.guess = this.guess.slice(0, -1);
     this.guessInput()?.nativeElement.focus({ preventScroll: true });
   }
@@ -138,7 +187,9 @@ export class WordPage {
           ? 'Le parole della sfida sono in preparazione. Riprova più tardi.'
           : error instanceof ApiError
             ? error.message
-            : 'Non è stato possibile aprire la partita. Riprova.',
+            : this.pending()
+              ? 'Invio non confermato. Controlla la connessione e premi «Riprova invio».'
+              : 'Non è stato possibile aprire la partita. Riprova.',
     );
   }
 }

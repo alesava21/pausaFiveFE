@@ -50,6 +50,17 @@
   gap: 2rem;
   margin-top: 1.5rem;
 }
+.daily-timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
 .board-wrap {
   min-width: 0;
 }

@@ -19,13 +19,17 @@ const active: WordSessionDto = {
 };
 
 describe('Parola segreta con autorità server', () => {
-  beforeEach(() =>
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-21T12:00:00+02:00'));
     TestBed.configureTestingModule({
       imports: [WordPage],
       providers: [provideHttpClient(), provideHttpClientTesting()],
-    }),
-  );
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
+    });
+  });
+  afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+    vi.restoreAllMocks();
+  });
 
   async function page(mode: 'DAILY' | 'ENDLESS' = 'DAILY') {
     const fixture = TestBed.createComponent(WordPage);
@@ -204,5 +208,204 @@ describe('Parola segreta con autorità server', () => {
     vi.spyOn(client, 'open').mockReturnValue(throwError(() => new ApiError(503, 'problem')));
     fixture.componentInstance.open();
     expect(fixture.componentInstance.message()).toContain('in preparazione');
+  });
+  it('blocca doppi invii finché POST e rilettura della sessione sono pendenti', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    const http = TestBed.inject(HttpTestingController);
+    component.guess = 'LIBRO';
+    component.submit();
+    component.submit();
+    const request = http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`);
+    request.flush({ status: 'ACTIVE' });
+    component.submit();
+    http.expectNone((request) => request.url.endsWith('/guesses'));
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).flush(active);
+    expect(component.busy()).toBe(false);
+  });
+
+  it.each([422, 429])(
+    'gestisce %s senza consumare tentativi o perdere la parola',
+    async (status) => {
+      const fixture = await page();
+      const component = fixture.componentInstance;
+      vi.spyOn(TestBed.inject(WordClient), 'guess').mockReturnValue(
+        throwError(() => new ApiError(status, 'problem')),
+      );
+      component.guess = 'LIBRO';
+      component.submit();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.pending()).toBeNull();
+      expect(component.game()?.remainingAttempts).toBe(6);
+      expect(component.guess).toBe('LIBRO');
+      expect(component.message()).toContain(status === 422 ? 'dizionario' : 'Attendi');
+      expect(fixture.nativeElement.querySelector('#word-guess').disabled).toBe(false);
+    },
+  );
+
+  it('recupera lo stato autorevole dopo 409 e non offre altre mosse se EXPIRED', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    vi.spyOn(TestBed.inject(WordClient), 'guess').mockReturnValue(
+      throwError(() => new ApiError(409, 'problem')),
+    );
+    component.guess = 'LIBRO';
+    component.submit();
+    TestBed.inject(HttpTestingController)
+      .expectOne(`/api/v1/sessions/${active.sessionId}`)
+      .flush({ ...active, status: 'EXPIRED' });
+    fixture.detectChanges();
+    expect(component.game()?.status).toBe('EXPIRED');
+    expect(component.busy()).toBe(false);
+    expect(fixture.nativeElement.querySelector('#word-guess')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Apri la sfida di oggi');
+    expect(fixture.nativeElement.textContent).not.toContain('La parola era');
+  });
+
+  it('mantiene la stessa chiave anche se fallisce la lettura dopo un POST accettato', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    const http = TestBed.inject(HttpTestingController);
+    component.guess = 'LIBRO';
+    component.submit();
+    const post = http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`);
+    const key = post.request.headers.get('Idempotency-Key');
+    post.flush({ status: 'ACTIVE' });
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).error(new ProgressEvent('offline'));
+    component.submit();
+    const retry = http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`);
+    expect(retry.request.headers.get('Idempotency-Key')).toBe(key);
+    retry.flush({ status: 'ACTIVE' });
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).flush(active);
+  });
+
+  it('riprende la stessa sessione e la cronologia dopo la ricreazione della pagina', async () => {
+    const first = await page();
+    first.destroy();
+    const fixture = await page();
+    fixture.componentInstance.open();
+    const attempt = {
+      guess: 'LIBRO',
+      evaluation: ['ABSENT', 'ABSENT', 'ABSENT', 'ABSENT', 'ABSENT'],
+    };
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/daily/word/sessions')
+      .flush({
+        ...active,
+        attempts: [attempt],
+        remainingAttempts: 5,
+      });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.game()?.sessionId).toBe(active.sessionId);
+    expect(fixture.nativeElement.querySelector('.word-row').textContent).toContain('L');
+    expect(fixture.nativeElement.textContent).toContain('tentativo 2 di 6');
+  });
+
+  it('chiude al sesto tentativo e mostra la soluzione soltanto ricevuto LOST', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    const attempt = {
+      guess: 'LIBRO',
+      evaluation: ['ABSENT', 'ABSENT', 'ABSENT', 'ABSENT', 'ABSENT'] as const,
+    };
+    component.game.set({ ...active, attempts: Array(5).fill(attempt), remainingAttempts: 1 });
+    component.guess = 'TRENO';
+    component.submit();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`).flush({ status: 'LOST' });
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).flush({
+      ...active,
+      status: 'LOST',
+      attempts: Array(6).fill(attempt),
+      remainingAttempts: 0,
+      solution: 'GATTO',
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#word-guess')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('GATTO');
+    component.submit();
+    http.expectNone((request) => request.url.endsWith('/guesses'));
+  });
+
+  it.each([
+    ['2026-03-29T00:00:00+01:00', '2026-03-30T00:00:00+02:00', '23:00:00'],
+    ['2026-10-25T00:00:00+02:00', '2026-10-26T00:00:00+01:00', '25:00:00'],
+  ])('usa il reset server con cambio ora legale %s', async (now, reset, expected) => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(now));
+    const fixture = await page();
+    fixture.componentInstance.game.set({ ...active, nextResetAt: reset });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.countdown()).toBe(expected);
+    expect(fixture.nativeElement.textContent).toContain('00:00 (ora italiana)');
+    expect(fixture.nativeElement.querySelector('.daily-timing').getAttribute('aria-live')).toBe(
+      'off',
+    );
+  });
+
+  it('aggiorna il countdown e blocca la mossa al reset anche rientrando da una scheda sospesa', async () => {
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    expect(component.countdown()).toBe('12:00:00');
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(active.nextResetAt));
+    document.dispatchEvent(new Event('visibilitychange'));
+    fixture.detectChanges();
+    expect(component.countdown()).toBe('00:00:00');
+    expect(fixture.nativeElement.querySelector('#word-guess')).toBeNull();
+    component.guess = 'LIBRO';
+    component.submit();
+    TestBed.inject(HttpTestingController).expectNone((request) => request.url.endsWith('/guesses'));
+    component.open();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/daily/word/sessions')
+      .flush({
+        ...active,
+        sessionId: 'new-day',
+        serverDate: '2026-10-22',
+        nextResetAt: '2026-10-23T00:00:00+02:00',
+      });
+    fixture.detectChanges();
+    expect(component.resetReached()).toBe(false);
+    expect(fixture.nativeElement.querySelector('#word-guess')).not.toBeNull();
+  });
+
+  it('controlla il tempo anche prima dell’invio e non applica scadenza alla modalità illimitata', async () => {
+    const fixture = await page('ENDLESS');
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(active.nextResetAt) + 1000);
+    fixture.componentInstance.guess = 'LIBRO';
+    fixture.componentInstance.submit();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(`/api/v1/sessions/${active.sessionId}/word/guesses`).flush({ status: 'ACTIVE' });
+    http.expectOne(`/api/v1/sessions/${active.sessionId}`).flush({ ...active, mode: 'ENDLESS' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.daily-timing')).toBeNull();
+    expect(fixture.componentInstance.resetReached()).toBe(false);
+  });
+  it('aggiorna ogni secondo e rimuove timer e listener alla distruzione', async () => {
+    const interval = vi.spyOn(window, 'setInterval');
+    const clear = vi.spyOn(window, 'clearInterval');
+    const fixture = await page();
+    const component = fixture.componentInstance;
+    const index = interval.mock.calls.findIndex(([, delay]) => delay === 1000);
+    expect(index).toBeGreaterThanOrEqual(0);
+    const tick = interval.mock.calls[index][0];
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-21T12:00:01+02:00'));
+    if (typeof tick === 'function') tick();
+    expect(component.countdown()).toBe('11:59:59');
+    fixture.destroy();
+    expect(clear).toHaveBeenCalledWith(interval.mock.results[index].value);
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(active.nextResetAt));
+    window.dispatchEvent(new Event('focus'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(component.countdown()).toBe('11:59:59');
+  });
+
+  it('non invia oltre il reset anche se il timer non è ancora scattato', async () => {
+    const fixture = await page();
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(active.nextResetAt));
+    fixture.componentInstance.guess = 'LIBRO';
+    fixture.componentInstance.submit();
+    expect(fixture.componentInstance.resetReached()).toBe(true);
+    TestBed.inject(HttpTestingController).expectNone((request) => request.url.endsWith('/guesses'));
   });
 });

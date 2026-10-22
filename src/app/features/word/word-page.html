@@ -11,6 +11,15 @@
         mode() === 'DAILY' ? 'La sfida di oggi' : 'Modalità illimitata'
       }}</span>
     </div>
+    @if (state.mode === 'DAILY') {
+      <div class="daily-timing" aria-live="off">
+        <span>Sfida del {{ state.serverDate.split('-').reverse().join('/') }}</span>
+        <span>Nuova sfida alle {{ resetTime() }} (ora italiana)</span>
+        <span
+          >Tempo indicativo al reset: <strong>{{ countdown() }}</strong></span
+        >
+      </div>
+    }
     <div class="play-area">
       <div class="board-wrap">
         <div class="board-title">
@@ -19,7 +28,8 @@
         <ol class="board" aria-label="Sei tentativi di cinque lettere">
           @for (row of emptyRows; track row) {
             @let attempt = state.attempts.at(row);
-            @let current = state.status === 'ACTIVE' && row === state.attempts.length;
+            @let current =
+              state.status === 'ACTIVE' && !resetReached() && row === state.attempts.length;
             <li
               class="word-row"
               [class.current]="current"
@@ -48,7 +58,7 @@
           ><span><i class="absent" aria-hidden="true"></i>Assente</span>
         </div>
       </div>
-      @if (state.status === 'ACTIVE') {
+      @if (state.status === 'ACTIVE' && !resetReached()) {
         <form class="word-controls" (ngSubmit)="submit()">
           <label for="word-guess"
             >La tua parola <span>tentativo {{ state.attempts.length + 1 }} di 6</span></label
@@ -93,8 +103,8 @@
         </form>
       }
     </div>
-    @if (state.status === 'EXPIRED') {
-      <p>La sfida è scaduta al cambio del giorno italiano.</p>
+    @if (state.status === 'EXPIRED' || (state.status === 'ACTIVE' && resetReached())) {
+      <p role="status">È l’ora di una nuova sfida. Apri quella di oggi per continuare.</p>
       <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
     } @else if (state.status !== 'ACTIVE') {
       <h2>{{ state.status === 'WON' ? 'Parola trovata!' : 'Partita conclusa' }}</h2>
@@ -106,6 +116,8 @@
       }
       @if (mode() === 'ENDLESS') {
         <app-button [busy]="busy()" (activated)="open(true)">Nuova parola</app-button>
+      } @else if (resetReached()) {
+        <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
       } @else {
         <p>Torna domani per una nuova sfida.</p>
       }
