@@ -145,7 +145,7 @@
 
           @if (showVerify()) {
             <div class="verify-cta">
-              @if (pendingFinish) {
+              @if (pendingFinish()) {
                 <app-button
                   variant="secondary"
                   [busy]="verifyBusy()"

@@ -66,7 +66,7 @@ export class SudokuDailyPage {
   readonly storageUnavailable = signal(false);
 
   private readonly now = signal(Date.now());
-  private pendingFinish: { board: readonly SudokuDigit[]; key: string } | null = null;
+  readonly pendingFinish = signal<{ board: readonly SudokuDigit[]; key: string } | null>(null);
 
   // Derived: showVerify is true when board is complete and no result yet
   readonly showVerify = computed(() => {
@@ -331,11 +331,11 @@ export class SudokuDailyPage {
           if (error instanceof ApiError) {
             if (error.status === 400) {
               this.message.set('Dati non validi. Ricarica e riprova.');
-              this.pendingFinish = null;
+              this.pendingFinish.set(null);
             } else if (error.status === 422) {
               this.message.set('Controlla i numeri inseriti: la soluzione non è corretta.');
               this.verifyBusy.set(false);
-              this.pendingFinish = null;
+              this.pendingFinish.set(null);
               return throwError(() => error);
             } else if (error.status === 409) {
               return this.client.getSession(session.sessionId).pipe(
@@ -355,14 +355,14 @@ export class SudokuDailyPage {
               this.message.set(
                 'Invio non confermato. Controlla la connessione e premi «Riprova verifica».',
               );
-              this.pendingFinish = { board, key: crypto.randomUUID() };
+              this.pendingFinish.set({ board, key: crypto.randomUUID() });
               this.verifyBusy.set(false);
               return throwError(() => error);
             }
           }
           // For all other errors (401, 403, 429, 500, 503, etc.)
           this.message.set('Errore durante la verifica. Riprova.');
-          this.pendingFinish = null;
+          this.pendingFinish.set(null);
           return throwError(() => error);
         }),
         takeUntilDestroyed(this.destroy),
@@ -373,7 +373,7 @@ export class SudokuDailyPage {
       )
       .subscribe({
         next: (finish: SudokuFinishDto) => {
-          this.pendingFinish = null;
+          this.pendingFinish.set(null);
           this.result.set(finish);
           this.session.update((s) => (s ? { ...s, status: 'WON' as const } : s));
           this.message.set(
@@ -387,25 +387,27 @@ export class SudokuDailyPage {
   }
 
   retryVerify(): void {
-    if (!this.pendingFinish || !this.session()) return;
+    if (!this.pendingFinish() || !this.session()) return;
     const session = this.session()!;
     this.client.getSession(session.sessionId).subscribe({
       next: (state) => {
         if (state.status === 'WON') {
           this.showResult(state);
-          this.pendingFinish = null;
+          this.pendingFinish.set(null);
           return;
         }
         if (state.status === 'EXPIRED') {
           this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
-          this.pendingFinish = null;
+          this.pendingFinish.set(null);
           return;
         }
         this.session.set(state);
         this.verifyBusy.set(true);
         this.message.set('');
+        // Use current board state, not stale pendingFinish
+        const currentBoard = toServerBoard(this.board()!);
         this.client
-          .finish(state.sessionId, this.pendingFinish!.board)
+          .finish(state.sessionId, currentBoard)
           .pipe(
             catchError((error: unknown) => {
               if (error instanceof ApiError && error.status === 409) {
@@ -431,7 +433,7 @@ export class SudokuDailyPage {
           )
           .subscribe({
             next: (finish: SudokuFinishDto) => {
-              this.pendingFinish = null;
+              this.pendingFinish.set(null);
               this.result.set(finish);
               this.message.set(
                 `Complimenti! Completato in ${this.formatElapsed(finish.elapsedSeconds)}.`,
