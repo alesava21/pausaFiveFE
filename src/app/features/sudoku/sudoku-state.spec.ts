@@ -292,6 +292,39 @@ describe('Sudoku state & persistence', () => {
     expect(board.undoStack.length).toBeLessThanOrEqual(50);
   });
 
+  it('save/load works with undo indices > 9 (regression for index validation)', () => {
+    let board = createBoard(givens);
+    board.puzzleId = puzzleId;
+    // Find non-given indices > 9
+    const nonGivenIndices = board.cells
+      .map((c, i) => ({ index: i, isGiven: c.isGiven }))
+      .filter((c) => !c.isGiven && c.index > 9)
+      .map((c) => c.index);
+    expect(nonGivenIndices.length).toBeGreaterThanOrEqual(3);
+    // Use first 3 non-given indices > 9
+    const [idxA, idxB, idxC] = nonGivenIndices.slice(0, 3);
+    board = applyMove(board, idxA, 4 as SudokuDigit);
+    board = applyMove(board, idxB, 5 as SudokuDigit);
+    board = applyMove(board, idxC, 6 as SudokuDigit);
+    expect(board.undoStack.length).toBeGreaterThanOrEqual(3);
+    // Verify indices are in valid range 0-80
+    for (const entry of board.undoStack) {
+      expect(entry.index).toBeGreaterThanOrEqual(0);
+      expect(entry.index).toBeLessThanOrEqual(80);
+    }
+    saveBoard(board);
+    // Load back and verify the moves persisted
+    const loaded = loadBoard(puzzleId, givens);
+    expect(loaded.cells[idxA].value).toBe(board.cells[idxA].value);
+    expect(loaded.cells[idxB].value).toBe(board.cells[idxB].value);
+    expect(loaded.cells[idxC].value).toBe(board.cells[idxC].value);
+    // Verify undo stack also loaded
+    expect(loaded.undoStack.length).toBe(board.undoStack.length);
+    for (let i = 0; i < loaded.undoStack.length; i++) {
+      expect(loaded.undoStack[i].index).toBe(board.undoStack[i].index);
+    }
+  });
+
   it('validateGivens rejects invalid input', () => {
     const board = loadBoard(puzzleId, [1, 2, 3] as unknown as readonly SudokuDigit[]);
     expect(board.cells).toHaveLength(81);
