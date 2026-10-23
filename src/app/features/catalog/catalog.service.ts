@@ -28,12 +28,26 @@ const playableCards: readonly GameCard[] = [
     route: '/parole-illimitate',
     description: 'Segui gli indizi e allenati con una nuova parola ogni volta che vuoi.',
   },
+  {
+    slug: 'sudoku',
+    mode: 'DAILY',
+    title: 'Sudoku del giorno',
+    route: '/sudoku-del-giorno',
+    description: 'Una nuova griglia 9×9 ogni giorno, con gli stessi indizi per tutti.',
+  },
 ];
 const staticCatalog: GamesDto['games'] = [
   {
     slug: 'word',
     title: 'Parola segreta',
     category: 'parole',
+    modes: ['DAILY', 'ENDLESS'],
+    enabled: true,
+  },
+  {
+    slug: 'sudoku',
+    title: 'Sudoku',
+    category: 'logica',
     modes: ['DAILY', 'ENDLESS'],
     enabled: true,
   },

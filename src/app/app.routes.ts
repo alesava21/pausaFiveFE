@@ -3,6 +3,8 @@ import { Route, Routes } from '@angular/router';
 const catalog = () => import('./features/catalog/catalog-page').then((page) => page.CatalogPage);
 const word = () => import('./features/word/word-page').then((page) => page.WordPage);
 const sudoku = () => import('./features/sudoku/sudoku-page').then((page) => page.SudokuPage);
+const sudokuDaily = () =>
+  import('./features/sudoku/daily/sudoku-daily-page').then((page) => page.SudokuDailyPage);
 const info = () => import('./features/info/info-page').then((page) => page.InfoPage);
 
 function page(
@@ -60,7 +62,7 @@ export const routes: Routes = [
     'sudoku-del-giorno',
     'Sudoku del giorno',
     'Una nuova griglia Sudoku ogni giorno, con gli stessi indizi per tutti i giocatori.',
-    sudoku,
+    sudokuDaily,
   ),
   page(
     '2048',

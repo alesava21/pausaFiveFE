@@ -47,14 +47,14 @@ describe('Catalogo dinamico con fallback statico', () => {
   it('prepara il fallback senza rete e lascia le card visibili durante il caricamento', async () => {
     const fixture = TestBed.createComponent(CatalogGames);
     expect(fixture.componentInstance.catalog.state()).toBe('static');
-    expect(fixture.componentInstance.catalog.cards()).toHaveLength(2);
+    expect(fixture.componentInstance.catalog.cards()).toHaveLength(3);
     TestBed.inject(HttpTestingController).expectNone('/api/v1/games');
     fixture.detectChanges();
     await fixture.whenStable();
     const request = TestBed.inject(HttpTestingController).expectOne('/api/v1/games');
     expect(request.request.method).toBe('GET');
     expect(request.request.transferCache).toBe(false);
-    expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(3);
     expect(fixture.nativeElement.textContent).toContain('Aggiorniamo');
     request.flush(seeded);
   });
@@ -68,12 +68,12 @@ describe('Catalogo dinamico con fallback statico', () => {
     ] as HTMLAnchorElement[];
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '/parola-del-giorno',
+      '/sudoku-del-giorno',
       '/parole-illimitate',
     ]);
     expect(fixture.nativeElement.textContent).toContain('Sfide di oggi');
     expect(fixture.nativeElement.textContent).toContain('Gioca senza limiti');
     expect(fixture.nativeElement.textContent).not.toContain('Prossimamente');
-    expect(fixture.nativeElement.textContent).not.toContain('Sudoku');
     expect(fixture.nativeElement.querySelectorAll('.availability')[0].textContent).toContain(
       'Disponibile',
     );
@@ -88,7 +88,7 @@ describe('Catalogo dinamico con fallback statico', () => {
     expect(fixture.nativeElement.querySelector('#catalog-DAILY')).toBeNull();
   });
 
-  it.each([{ games: [] }, { games: [{ ...word, enabled: false }] }, { games: [seeded.games[1]] }])(
+  it.each([{ games: [] }, { games: [{ ...word, enabled: false }] }])(
     'rende il catalogo vuoto senza ripristinare giochi nascosti: %j',
     async (payload) => {
       const { fixture, request } = await page();
@@ -100,12 +100,12 @@ describe('Catalogo dinamico con fallback statico', () => {
     },
   );
 
-  it('spiega l’errore di rete, mantiene il fallback e consente un retry senza richieste duplicate', async () => {
+  it("spiega l'errore di rete, mantiene il fallback e consente un retry senza richieste duplicate", async () => {
     const { fixture, request } = await page();
     request.error(new ProgressEvent('network'));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Non riusciamo a verificare');
-    expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(3);
     expect(fixture.nativeElement.querySelector('.availability').textContent).toContain(
       'Da verificare',
     );
@@ -163,7 +163,7 @@ describe('Catalogo dinamico con fallback statico', () => {
         await fixture.whenStable();
         TestBed.inject(HttpTestingController).expectOne('/api/v1/games').flush(seeded);
         fixture.detectChanges();
-        expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(2);
+        expect(fixture.nativeElement.querySelectorAll('app-game-tile')).toHaveLength(3);
         fixture.destroy();
       }
     },
