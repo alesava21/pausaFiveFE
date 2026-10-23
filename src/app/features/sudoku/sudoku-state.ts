@@ -25,6 +25,10 @@ function isSudokuDigit(n: unknown): n is SudokuDigit {
   return typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 9;
 }
 
+function isBoardIndex(n: unknown): n is number {
+  return typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 80;
+}
+
 function validateGivens(givens: unknown): givens is readonly SudokuDigit[] {
   return Array.isArray(givens) && givens.length === 81 && givens.every(isSudokuDigit);
 }
@@ -48,7 +52,7 @@ function validateStoredBoard(raw: unknown, expectedPuzzleId: string): SudokuBoar
   for (const entry of board['undoStack']) {
     if (!entry || typeof entry !== 'object') return null;
     const e = entry as Record<string, unknown>;
-    if (!isSudokuDigit(e['index'])) return null;
+    if (!isBoardIndex(e['index'])) return null;
     if (!isSudokuDigit(e['prevValue'])) return null;
     if (!Array.isArray(e['prevNotes']) || !e['prevNotes'].every(isSudokuDigit)) return null;
   }

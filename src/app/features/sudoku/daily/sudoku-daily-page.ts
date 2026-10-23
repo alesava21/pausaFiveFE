@@ -225,7 +225,9 @@ export class SudokuDailyPage {
     if (this.busy() || this.verifyBusy() || this.resetReached() || this.result()) return;
     const b = this.board();
     if (!b) return;
-    this.selectedIndex.set(this.selectedIndex() === index ? null : index);
+    // Idempotent selection: clicking an already-selected cell keeps it selected
+    // (focus handler may have already set it; click should not toggle off)
+    this.selectedIndex.set(index);
     this.pencilMode.set(false);
   }
 
