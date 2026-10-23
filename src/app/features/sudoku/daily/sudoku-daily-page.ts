@@ -331,9 +331,11 @@ export class SudokuDailyPage {
           if (error instanceof ApiError) {
             if (error.status === 400) {
               this.message.set('Dati non validi. Ricarica e riprova.');
+              this.pendingFinish = null;
             } else if (error.status === 422) {
               this.message.set('Controlla i numeri inseriti: la soluzione non è corretta.');
               this.verifyBusy.set(false);
+              this.pendingFinish = null;
               return throwError(() => error);
             } else if (error.status === 409) {
               return this.client.getSession(session.sessionId).pipe(
@@ -358,16 +360,15 @@ export class SudokuDailyPage {
               return throwError(() => error);
             }
           }
+          // For all other errors (401, 403, 429, 500, 503, etc.)
           this.message.set('Errore durante la verifica. Riprova.');
+          this.pendingFinish = null;
           return throwError(() => error);
         }),
         takeUntilDestroyed(this.destroy),
         finalize(() => {
           // Always release the verification lock
           this.verifyBusy.set(false);
-          if (!this.pendingFinish) {
-            // No pending retry, lock already released
-          }
         }),
       )
       .subscribe({

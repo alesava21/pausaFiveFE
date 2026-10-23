@@ -145,17 +145,29 @@
 
           @if (showVerify()) {
             <div class="verify-cta">
-              <app-button
-                variant="primary"
-                [busy]="verifyBusy()"
-                (activated)="verify()"
-                [disabled]="!session() || session()?.status !== 'ACTIVE'"
-              >
-                Verifica
-              </app-button>
-              <p class="verify-hint">
-                La griglia è completa. Premi Verifica per inviare la soluzione al server.
-              </p>
+              @if (pendingFinish) {
+                <app-button
+                  variant="secondary"
+                  [busy]="verifyBusy()"
+                  (activated)="retryVerify()"
+                  [disabled]="!session() || session()?.status !== 'ACTIVE'"
+                >
+                  Riprova verifica
+                </app-button>
+                <p class="verify-hint">Invio precedente non confermato. Premi per riprovare.</p>
+              } @else {
+                <app-button
+                  variant="primary"
+                  [busy]="verifyBusy()"
+                  (activated)="verify()"
+                  [disabled]="!session() || session()?.status !== 'ACTIVE'"
+                >
+                  Verifica
+                </app-button>
+                <p class="verify-hint">
+                  La griglia è completa. Premi Verifica per inviare la soluzione al server.
+                </p>
+              }
             </div>
           }
         </div>
