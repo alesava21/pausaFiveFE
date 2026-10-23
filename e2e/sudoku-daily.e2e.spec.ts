@@ -122,6 +122,24 @@ test('indizi immutabili e layout reale senza overflow a320px', async ({ page }) 
       .nth(3)
       .evaluate((el) => getComputedStyle(el).borderLeftWidth),
   ).toBe('2px');
+  for (const [index, border] of [
+    [29, 'borderTopWidth'],
+    [8, 'borderRightWidth'],
+    [73, 'borderBottomWidth'],
+  ] as const) {
+    expect(
+      await page
+        .getByRole('gridcell')
+        .nth(index)
+        .evaluate((el, key) => getComputedStyle(el)[key], border),
+    ).toBe('2px');
+  }
+  expect(
+    await page
+      .getByRole('gridcell')
+      .nth(10)
+      .evaluate((el) => getComputedStyle(el).borderTopWidth),
+  ).toBe('1px');
   await page.screenshot({
     path: `test-results/sudoku-320-${test.info().project.name}.png`,
     fullPage: true,
@@ -188,4 +206,50 @@ test('rete: recupera ACTIVE e invia la board corretta dopo modifica', async ({ p
   expect(finishes(requests)[1].board).toEqual([...solution]);
   const firstPost = requests.findIndex((r) => r.path.endsWith('/sudoku/finish'));
   expect(requests[firstPost + 1].path).toBe(`/api/v1/sessions/${active.sessionId}`);
+});
+
+test('refresh conserva la griglia completa e recupera WON senza inventare il tempo', async ({
+  page,
+}) => {
+  const requests = await api(page);
+  await open(page);
+  await fill(page);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Verifica', exact: true })).toBeVisible();
+  const cell = page.getByRole('gridcell').nth(2);
+  await expect(cell).toHaveAttribute('aria-label', /valore 4/);
+  await cell.click();
+  await cell.press('Backspace');
+  await expect(page.getByRole('button', { name: 'Verifica', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Annulla ultima mossa (Ctrl+Z)', exact: true }).click();
+  await page.getByRole('button', { name: 'Verifica', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sudoku completato!' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Sudoku completato!' })).toBeVisible();
+  await expect(
+    page.getByText('Tempo finale non disponibile dopo il recupero della partita.'),
+  ).toBeVisible();
+  expect(finishes(requests)).toHaveLength(1);
+  expect(requests.filter((r) => r.path === `/api/v1/sessions/${active.sessionId}`)).toHaveLength(0);
+});
+
+test('rete poi retry422 consente correzione corrente e vittoria', async ({ page }) => {
+  const requests = await api(page, 'network');
+  await open(page);
+  await fill(page);
+  const cell = page.getByRole('gridcell').nth(2);
+  await cell.click();
+  await cell.press('1');
+  await page.getByRole('button', { name: 'Verifica', exact: true }).click();
+  await page.getByRole('button', { name: 'Riprova verifica', exact: true }).click();
+  await expect(
+    page.getByText('Controlla i numeri inseriti: la soluzione non è corretta.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Riprova verifica', exact: true })).toHaveCount(0);
+  await cell.click();
+  await cell.press('4');
+  await page.getByRole('button', { name: 'Verifica', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sudoku completato!' })).toBeVisible();
+  expect(finishes(requests)).toHaveLength(3);
+  expect(finishes(requests)[2].board).toEqual([...solution]);
 });

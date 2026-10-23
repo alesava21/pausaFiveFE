@@ -104,7 +104,7 @@ export interface SudokuFinishDto {
   readonly elapsedSeconds: number;
   readonly errors: number;
 }
-export interface SudokuSessionDto extends DailyTimingDto {
+export interface SudokuSessionDto {
   readonly sessionId: string;
   readonly puzzleId: string;
   readonly mode: 'DAILY';

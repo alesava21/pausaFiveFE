@@ -1,5 +1,9 @@
 # Report TASK-021 — Copertura UI e correzione focus WebKit
 
+Questo report registra le verifiche del commit `c5535dc`. Per la revisione
+completa successiva e le correzioni aggiuntive, vedere
+[TASK-021-FINAL-REVIEW.md](TASK-021-FINAL-REVIEW.md).
+
 - **Stato finale:** IN REVIEW; requisiti UI/test verificati, in attesa della
   pubblicazione e della verifica CI remota del nuovo commit.
 - **Commit:** commit contenente questo report, basato su `fdee2c3` della PR1.

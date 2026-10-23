@@ -23,8 +23,6 @@ const session: SudokuSessionDto = {
   mode: 'DAILY',
   status: 'ACTIVE',
   startedAt: '2026-10-21T12:00:00+02:00',
-  serverDate: '2026-10-21',
-  nextResetAt: '2026-10-22T00:00:00+02:00',
 };
 
 const finishResponse: SudokuFinishDto = {

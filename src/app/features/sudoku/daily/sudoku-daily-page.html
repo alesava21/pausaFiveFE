@@ -32,6 +32,7 @@
     @if (session(); as sess) {
       @if (sess.status === 'ACTIVE' && !resetReached() && !result()) {
         <div class="play-area">
+          <p aria-live="off">Tempo indicativo di gioco: {{ elapsed() }}</p>
           <div class="board-wrap" #gridEl (keydown)="handleKeydown($event)" tabindex="0">
             <div class="board" role="grid" aria-label="Griglia Sudoku 9 per 9">
               @for (row of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track row) {
@@ -176,14 +177,11 @@
         <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
       } @else if (result()) {
         <h2>Sudoku completato!</h2>
-        <p>
-          Tempo:
-          {{
-            result()?.elapsedSeconds
-              ? (result()!.elapsedSeconds / 60).toFixed(1) + ' minuti'
-              : 'calcolato dal server'
-          }}
-        </p>
+        @if (result()?.elapsedSeconds === null) {
+          <p>Tempo finale non disponibile dopo il recupero della partita.</p>
+        } @else {
+          <p>Tempo server: {{ result()!.elapsedSeconds }} secondi</p>
+        }
         <p>Torna domani per una nuova sfida.</p>
       }
     } @else {

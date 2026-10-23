@@ -26,7 +26,5 @@ export const active: SudokuSessionDto = {
   mode: 'DAILY',
   status: 'ACTIVE',
   startedAt: '2026-10-24T10:00:00Z',
-  serverDate: daily.serverDate,
-  nextResetAt: daily.nextResetAt,
 };
 export const now = Date.parse('2026-10-24T10:00:10Z');

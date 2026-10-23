@@ -8,13 +8,11 @@ import {
   inject,
   input,
   signal,
-  viewChild,
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
+import { EMPTY, catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import {
   DailySudokuDto,
   SudokuDigit,
@@ -41,7 +39,7 @@ import {
 
 @Component({
   selector: 'app-sudoku-daily-page',
-  imports: [FormsModule, RouterLink, Button, Loading, StatusMessage],
+  imports: [RouterLink, Button, Loading, StatusMessage],
   templateUrl: './sudoku-daily-page.html',
   styleUrl: './sudoku-daily-page.scss',
 })
@@ -62,7 +60,9 @@ export class SudokuDailyPage {
   readonly verifyBusy = signal(false);
   readonly ready = signal(false);
   readonly message = signal('');
-  readonly result = signal<SudokuFinishDto | null>(null);
+  readonly result = signal<
+    (Omit<SudokuFinishDto, 'elapsedSeconds'> & { elapsedSeconds: number | null }) | null
+  >(null);
   readonly storageUnavailable = signal(false);
 
   private readonly now = signal(Date.now());
@@ -103,7 +103,6 @@ export class SudokuDailyPage {
   });
 
   readonly cellElements = viewChildren<ElementRef<HTMLButtonElement>>('cellEl');
-  private readonly gridEl = viewChild<ElementRef<HTMLDivElement>>('gridEl');
   readonly digits = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
   constructor() {
@@ -132,8 +131,11 @@ export class SudokuDailyPage {
     });
   }
 
-  open(): void {
-    if (this.busy()) return;
+  open(reloadOnMismatch = true): void {
+    if (this.busy() || this.verifyBusy()) return;
+    let reload = false;
+    this.session.set(null);
+    this.pendingFinish.set(null);
     this.busy.set(true);
     this.message.set('');
     this.result.set(null);
@@ -158,9 +160,7 @@ export class SudokuDailyPage {
           this.puzzle.set(daily);
           this.now.set(Date.now());
           const loadedBoard = loadBoard(daily.puzzleId, daily.givens);
-          if (loadedBoard !== (this.board() ?? ({} as SudokuBoard))) {
-            this.storageUnavailable.set(false);
-          }
+          this.storageUnavailable.set(!saveBoard(loadedBoard));
           this.board.set(loadedBoard);
           this.selectedIndex.set(null);
           this.pencilMode.set(false);
@@ -176,14 +176,17 @@ export class SudokuDailyPage {
           return throwError(() => error);
         }),
         takeUntilDestroyed(this.destroy),
-        finalize(() => this.busy.set(false)),
+        finalize(() => {
+          this.busy.set(false);
+          if (reload) this.open(false);
+        }),
       )
       .subscribe({
         next: (session) => {
           this.now.set(Date.now());
           if (session.puzzleId !== this.puzzle()?.puzzleId) {
             this.message.set('La sfida è cambiata. Ricarico la griglia di oggi.');
-            this.open();
+            reload = reloadOnMismatch;
             return;
           }
           this.session.set(session);
@@ -200,25 +203,23 @@ export class SudokuDailyPage {
   }
 
   private showResult(session: SudokuSessionDto): void {
-    this.client.getSession(session.sessionId).subscribe({
-      next: (full) => {
-        this.session.set(full);
-        if (full.status === 'WON') {
-          this.result.set({
-            status: 'WON',
-            completed: true,
-            elapsedSeconds: 0,
-            errors: 0,
-          });
-          this.message.set('Complimenti! Hai completato il Sudoku.');
-        } else if (full.status === 'EXPIRED') {
-          this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
-        }
-      },
-      error: () => {
-        this.message.set('Impossibile recuperare il risultato. Riprova.');
-      },
-    });
+    // TASK-020's session DTO has no duration. A recovered WON is authoritative;
+    // do not add another fallible GET or invent a server-measured duration.
+    this.session.set(session);
+    this.pendingFinish.set(null);
+    this.result.set({ status: 'WON', completed: true, elapsedSeconds: null, errors: 0 });
+    this.message.set('Complimenti! Hai completato il Sudoku.');
+  }
+
+  readonly elapsed = computed(() => {
+    const started = Date.parse(this.session()?.startedAt ?? '');
+    return Number.isFinite(started)
+      ? this.formatElapsed(Math.max(0, Math.floor((this.now() - started) / 1000)))
+      : '';
+  });
+
+  private persist(board: SudokuBoard): void {
+    this.storageUnavailable.set(!saveBoard(board));
   }
 
   selectCell(index: number): void {
@@ -268,7 +269,7 @@ export class SudokuDailyPage {
     if (!b || sel === null) return;
     if (b.cells[sel].isGiven || b.cells[sel].value !== 0) return;
     this.board.set(applyNote(b, sel, digit as SudokuDigit));
-    saveBoard(this.board()!);
+    this.persist(this.board()!);
   }
 
   undoMove(): void {
@@ -278,7 +279,7 @@ export class SudokuDailyPage {
     const undone = undo(b);
     if (undone) {
       this.board.set(undone);
-      saveBoard(undone);
+      this.persist(undone);
       this.message.set('Mossa annullata.');
     } else {
       this.message.set('Nessuna mossa da annullare.');
@@ -293,7 +294,7 @@ export class SudokuDailyPage {
   private saveAndCheck(): void {
     const b = this.board();
     if (!b) return;
-    saveBoard(b);
+    this.persist(b);
     // showVerify is computed from board state
     if (isComplete(b) && hasConflicts(b)) {
       this.message.set('Ci sono conflitti nella griglia. Controlla i numeri inseriti.');
@@ -303,7 +304,12 @@ export class SudokuDailyPage {
   }
 
   verify(): void {
+    this.now.set(Date.now());
     if (this.verifyBusy() || this.busy() || !this.session() || !this.board()) return;
+    if (this.pendingFinish()) {
+      this.retryVerify();
+      return;
+    }
     const session = this.session()!;
     if (session.puzzleId !== this.puzzle()?.puzzleId) {
       this.message.set('La sfida è cambiata. Ricarico la griglia di oggi.');
@@ -328,129 +334,103 @@ export class SudokuDailyPage {
     this.verifyBusy.set(true);
     this.message.set('');
 
-    this.client
-      .finish(session.sessionId, board)
+    this.submitFinish(session.sessionId, board)
       .pipe(
-        catchError((error: unknown) => {
-          if (error instanceof ApiError) {
-            if (error.status === 400) {
-              this.message.set('Dati non validi. Ricarica e riprova.');
-              this.pendingFinish.set(null);
-            } else if (error.status === 422) {
-              this.message.set('Controlla i numeri inseriti: la soluzione non è corretta.');
-              this.verifyBusy.set(false);
-              this.pendingFinish.set(null);
-              return throwError(() => error);
-            } else if (error.status === 409) {
-              return this.client.getSession(session.sessionId).pipe(
-                tap((state) => {
-                  this.session.set(state);
-                  if (state.status === 'WON') {
-                    this.showResult(state);
-                  } else if (state.status === 'EXPIRED') {
-                    this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
-                  } else if (state.status === 'ACTIVE') {
-                    this.message.set("Partita già conclusa in un'altra scheda.");
-                  }
-                }),
-                switchMap(() => throwError(() => error)),
-              );
-            } else if (error.status === 0) {
-              this.message.set(
-                'Invio non confermato. Controlla la connessione e premi «Riprova verifica».',
-              );
-              this.pendingFinish.set({ board, key: crypto.randomUUID() });
-              this.verifyBusy.set(false);
-              return throwError(() => error);
-            }
-          }
-          // For all other errors (401, 403, 429, 500, 503, etc.)
-          this.message.set('Errore durante la verifica. Riprova.');
-          this.pendingFinish.set(null);
-          return throwError(() => error);
-        }),
         takeUntilDestroyed(this.destroy),
-        finalize(() => {
-          // Always release the verification lock
-          this.verifyBusy.set(false);
-        }),
+        finalize(() => this.verifyBusy.set(false)),
       )
-      .subscribe({
-        next: (finish: SudokuFinishDto) => {
-          this.pendingFinish.set(null);
-          this.result.set(finish);
-          this.session.update((s) => (s ? { ...s, status: 'WON' as const } : s));
-          this.message.set(
-            `Complimenti! Completato in ${this.formatElapsed(finish.elapsedSeconds)}.`,
+      .subscribe({ next: (finish) => this.complete(finish), error: () => {} });
+  }
+
+  private complete(finish: SudokuFinishDto): void {
+    this.pendingFinish.set(null);
+    this.result.set(finish);
+    this.session.update((s) => (s ? { ...s, status: 'WON' as const } : s));
+    this.message.set(`Complimenti! Completato in ${this.formatElapsed(finish.elapsedSeconds)}.`);
+  }
+
+  private acceptRecovered(state: SudokuSessionDto): void {
+    this.session.set(state);
+    if (state.status === 'WON') this.showResult(state);
+    else if (state.status === 'EXPIRED') {
+      this.pendingFinish.set(null);
+      this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
+    }
+  }
+
+  private submitFinish(sessionId: string, board: readonly SudokuDigit[]) {
+    return this.client.finish(sessionId, board).pipe(
+      catchError((error: unknown) => {
+        if (error instanceof ApiError && error.status === 409) {
+          // A finish may have succeeded in another tab or before a lost response.
+          // Keep an explicit recovery action if this GET also fails.
+          this.pendingFinish.set({ board, key: '' });
+          return this.client.getSession(sessionId).pipe(
+            tap((state) => {
+              this.acceptRecovered(state);
+              if (state.status === 'ACTIVE')
+                this.message.set('Stato recuperato. Premi «Riprova verifica».');
+            }),
+            catchError((recoveryError: unknown) => {
+              this.message.set('Impossibile recuperare lo stato. Riprova.');
+              return throwError(() => recoveryError);
+            }),
+            switchMap(() => EMPTY),
           );
-        },
-        error: () => {
-          /* handled in catchError */
-        },
-      });
+        }
+        if (error instanceof ApiError && error.status === 0) {
+          this.pendingFinish.set({ board, key: '' });
+          this.message.set(
+            'Invio non confermato. Controlla la connessione e premi «Riprova verifica».',
+          );
+        } else {
+          this.pendingFinish.set(null);
+          this.message.set(
+            error instanceof ApiError && error.status === 422
+              ? 'Controlla i numeri inseriti: la soluzione non è corretta.'
+              : error instanceof ApiError && error.status === 400
+                ? 'Dati non validi. Ricarica e riprova.'
+                : 'Errore durante la verifica. Riprova.',
+          );
+        }
+        return throwError(() => error);
+      }),
+    );
   }
 
   retryVerify(): void {
-    if (!this.pendingFinish() || !this.session()) return;
+    if (this.verifyBusy() || this.busy() || !this.pendingFinish() || !this.session()) return;
     const session = this.session()!;
-    this.client.getSession(session.sessionId).subscribe({
-      next: (state) => {
-        if (state.status === 'WON') {
-          this.showResult(state);
-          this.pendingFinish.set(null);
-          return;
-        }
-        if (state.status === 'EXPIRED') {
-          this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
-          this.pendingFinish.set(null);
-          return;
-        }
-        this.session.set(state);
-        this.verifyBusy.set(true);
-        this.message.set('');
-        // Use current board state, not stale pendingFinish
-        const currentBoard = toServerBoard(this.board()!);
-        this.client
-          .finish(state.sessionId, currentBoard)
-          .pipe(
-            catchError((error: unknown) => {
-              if (error instanceof ApiError && error.status === 409) {
-                return this.client.getSession(state.sessionId).pipe(
-                  tap((s) => {
-                    this.session.set(s);
-                    if (s.status === 'WON') this.showResult(s);
-                    else
-                      this.message.set('La sfida è scaduta. Apri quella di oggi per continuare.');
-                  }),
-                  switchMap(() => throwError(() => error)),
-                );
-              }
-              this.message.set('Errore durante la verifica. Riprova.');
-              this.verifyBusy.set(false);
-              return throwError(() => error);
-            }),
-            takeUntilDestroyed(this.destroy),
-            finalize(() => {
-              // Always release the verification lock
-              this.verifyBusy.set(false);
-            }),
-          )
-          .subscribe({
-            next: (finish: SudokuFinishDto) => {
-              this.pendingFinish.set(null);
-              this.result.set(finish);
-              this.message.set(
-                `Complimenti! Completato in ${this.formatElapsed(finish.elapsedSeconds)}.`,
-              );
-            },
-            error: () => {},
-          });
-      },
-      error: () => {
-        this.message.set('Impossibile recuperare lo stato. Riprova.');
-        this.verifyBusy.set(false);
-      },
-    });
+    this.verifyBusy.set(true);
+    this.message.set('');
+    this.client
+      .getSession(session.sessionId)
+      .pipe(
+        catchError((error: unknown) => {
+          this.message.set('Impossibile recuperare lo stato. Riprova.');
+          return throwError(() => error);
+        }),
+        switchMap((state) => {
+          this.acceptRecovered(state);
+          if (state.status !== 'ACTIVE') return EMPTY;
+          this.now.set(Date.now());
+          if (state.puzzleId !== this.puzzle()?.puzzleId || this.resetReached()) {
+            this.session.set({ ...state, status: 'EXPIRED' });
+            this.pendingFinish.set(null);
+            return EMPTY;
+          }
+          const currentBoard = toServerBoard(this.board()!);
+          if (currentBoard.some((v) => v === 0)) {
+            this.pendingFinish.set(null);
+            this.message.set('Completa la griglia prima di verificare.');
+            return EMPTY;
+          }
+          return this.submitFinish(state.sessionId, currentBoard);
+        }),
+        takeUntilDestroyed(this.destroy),
+        finalize(() => this.verifyBusy.set(false)),
+      )
+      .subscribe({ next: (finish) => this.complete(finish), error: () => {} });
   }
 
   handleKeydown(event: KeyboardEvent): void {

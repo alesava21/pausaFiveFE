@@ -109,9 +109,9 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
     }
 
     const givensValid = validated.cells.every((cell, i) =>
-      givens[i] === 0 ? true : cell.value === givens[i] && cell.isGiven,
+      givens[i] === 0 ? !cell.isGiven : cell.value === givens[i] && cell.isGiven,
     );
-    if (!givensValid) {
+    if (!givensValid || validated.undoStack.some((entry) => givens[entry.index] !== 0)) {
       storage.removeItem(storageKey(puzzleId));
       return fresh;
     }
@@ -128,20 +128,21 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
   }
 }
 
-export function saveBoard(board: SudokuBoard): void {
-  if (typeof window === 'undefined') return;
+export function saveBoard(board: SudokuBoard): boolean {
+  if (typeof window === 'undefined') return false;
   let storage: Storage | null = null;
   try {
     storage = window.localStorage;
   } catch {
-    return;
+    return false;
   }
-  if (!storage) return;
+  if (!storage) return false;
   try {
     const toSave = { ...board, updatedAt: Date.now() };
     storage.setItem(storageKey(board.puzzleId), JSON.stringify(toSave));
+    return true;
   } catch {
-    /* Storage full or unavailable - game continues without persistence */
+    return false; // Game continues in memory.
   }
 }
 
@@ -229,6 +230,7 @@ export function clearCell(board: SudokuBoard, index: number): SudokuBoard {
 export function undo(board: SudokuBoard): SudokuBoard | null {
   if (board.undoStack.length === 0) return null;
   const last = board.undoStack[board.undoStack.length - 1];
+  if (!isBoardIndex(last.index) || board.cells[last.index].isGiven) return null;
   const newCells = deepCloneCells(board.cells);
   newCells[last.index] = {
     ...newCells[last.index],
