@@ -229,6 +229,10 @@ export class SudokuDailyPage {
     // (focus handler may have already set it; click should not toggle off)
     this.selectedIndex.set(index);
     this.pencilMode.set(false);
+    // WebKit mouse activation can blur an already-focused native button.
+    // The same selection does not notify afterRenderEffect, so restore focus
+    // as part of the explicit click/keyboard action, without waiting for a render.
+    this.cellElements()[index]?.nativeElement.focus({ preventScroll: true });
   }
 
   setDigit(digit: number): void {
