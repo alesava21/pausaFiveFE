@@ -53,6 +53,7 @@ export class SudokuDailyPage {
   private readonly destroy = inject(DestroyRef);
 
   readonly puzzle = signal<DailySudokuDto | null>(null);
+  readonly puzzleError = signal<string | null>(null);
   readonly session = signal<SudokuSessionDto | null>(null);
   readonly board = signal<SudokuBoard | null>(null);
   readonly selectedIndex = signal<number | null>(null);
@@ -62,11 +63,16 @@ export class SudokuDailyPage {
   readonly ready = signal(false);
   readonly message = signal('');
   readonly result = signal<SudokuFinishDto | null>(null);
-  readonly showVerify = signal(false);
   readonly storageUnavailable = signal(false);
 
   private readonly now = signal(Date.now());
   private pendingFinish: { board: readonly SudokuDigit[]; key: string } | null = null;
+
+  // Derived: showVerify is true when board is complete and no result yet
+  readonly showVerify = computed(() => {
+    const b = this.board();
+    return !this.result() && b !== null && isComplete(b);
+  });
 
   readonly resetReached = computed(() => {
     const p = this.puzzle();
@@ -131,13 +137,20 @@ export class SudokuDailyPage {
     this.busy.set(true);
     this.message.set('');
     this.result.set(null);
+    this.puzzleError.set(null);
 
     this.client
       .daily()
       .pipe(
         catchError((error: unknown) => {
           if (error instanceof ApiError && error.status === 503) {
-            this.message.set('Il Sudoku del giorno non è ancora disponibile. Riprova più tardi.');
+            this.puzzleError.set(
+              'Il Sudoku del giorno non è ancora disponibile. Riprova più tardi.',
+            );
+          } else {
+            this.puzzleError.set(
+              'Impossibile caricare il puzzle. Controlla la connessione e riprova.',
+            );
           }
           return throwError(() => error);
         }),
@@ -151,7 +164,7 @@ export class SudokuDailyPage {
           this.board.set(loadedBoard);
           this.selectedIndex.set(null);
           this.pencilMode.set(false);
-          this.showVerify.set(false);
+          // showVerify is now computed from board state
           return this.client.openSession();
         }),
         catchError((error: unknown) => {
@@ -275,7 +288,7 @@ export class SudokuDailyPage {
     const b = this.board();
     if (!b) return;
     saveBoard(b);
-    this.showVerify.set(isComplete(b));
+    // showVerify is computed from board state
     if (isComplete(b) && hasConflicts(b)) {
       this.message.set('Ci sono conflitti nella griglia. Controlla i numeri inseriti.');
     } else {
@@ -348,12 +361,15 @@ export class SudokuDailyPage {
         }),
         takeUntilDestroyed(this.destroy),
         finalize(() => {
-          if (!this.pendingFinish) this.verifyBusy.set(false);
+          // Always release the verification lock
+          this.verifyBusy.set(false);
+          if (!this.pendingFinish) {
+            // No pending retry, lock already released
+          }
         }),
       )
       .subscribe({
         next: (finish: SudokuFinishDto) => {
-          this.verifyBusy.set(false);
           this.pendingFinish = null;
           this.result.set(finish);
           this.session.update((s) => (s ? { ...s, status: 'WON' as const } : s));
@@ -406,12 +422,12 @@ export class SudokuDailyPage {
             }),
             takeUntilDestroyed(this.destroy),
             finalize(() => {
-              if (this.pendingFinish) this.verifyBusy.set(false);
+              // Always release the verification lock
+              this.verifyBusy.set(false);
             }),
           )
           .subscribe({
             next: (finish: SudokuFinishDto) => {
-              this.verifyBusy.set(false);
               this.pendingFinish = null;
               this.result.set(finish);
               this.message.set(

@@ -168,22 +168,23 @@
   background: #fef9e7;
 }
 
-.border-top {
+/* 3x3 box boundaries - higher specificity to override base button border */
+.board button.border-top {
   border-top-width: 2px;
   border-top-color: var(--color-primary);
 }
 
-.border-left {
+.board button.border-left {
   border-left-width: 2px;
   border-left-color: var(--color-primary);
 }
 
-.border-bottom {
+.board button.border-bottom {
   border-bottom-width: 2px;
   border-bottom-color: var(--color-primary);
 }
 
-.border-right {
+.board button.border-right {
   border-right-width: 2px;
   border-right-color: var(--color-primary);
 }

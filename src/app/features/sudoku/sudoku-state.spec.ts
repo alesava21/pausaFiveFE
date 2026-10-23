@@ -135,6 +135,23 @@ describe('Sudoku state & persistence', () => {
     Object.defineProperty(window, 'localStorage', { value: originalLS, configurable: true });
   });
 
+  it('handles localStorage getter throwing SecurityError', () => {
+    const originalLS = window.localStorage;
+    Object.defineProperty(window, 'localStorage', {
+      get: () => {
+        throw new DOMException('Storage bloccato', 'SecurityError');
+      },
+      configurable: true,
+    });
+
+    const board = loadBoard(puzzleId, givens);
+    expect(board.cells[0].value).toBe(5);
+    expect(() => saveBoard(board)).not.toThrow();
+    expect(() => clearBoard(puzzleId)).not.toThrow();
+
+    Object.defineProperty(window, 'localStorage', { value: originalLS, configurable: true });
+  });
+
   it('applies move without mutating givens', () => {
     let board = createBoard(givens);
     board.puzzleId = puzzleId;

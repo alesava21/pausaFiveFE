@@ -9,7 +9,12 @@
   aria-label="Partita Sudoku del giorno"
   [attr.aria-busy]="busy() || verifyBusy()"
 >
-  @if (puzzle(); as daily) {
+  @if (puzzleError(); as error) {
+    <div class="error-state">
+      <app-status-message [message]="error" tone="error" />
+      <app-button (activated)="open()">Riprova</app-button>
+    </div>
+  } @else if (puzzle(); as daily) {
     <div class="game-header">
       <div class="game-title">
         <span class="brand">sudoku<span>del giorno.</span></span>
@@ -84,7 +89,7 @@
                     verifyBusy() ||
                     resetReached() ||
                     result() ||
-                    !selectedIndex() ||
+                    selectedIndex() === null ||
                     board()?.cells[selectedIndex()!]?.isGiven
                   "
                   (click)="pencilMode() ? toggleNote(d) : setDigit(d)"
@@ -101,7 +106,7 @@
                   verifyBusy() ||
                   resetReached() ||
                   result() ||
-                  !selectedIndex() ||
+                  selectedIndex() === null ||
                   board()?.cells[selectedIndex()!]?.isGiven
                 "
                 (click)="clearCell()"

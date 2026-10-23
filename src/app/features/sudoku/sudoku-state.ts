@@ -78,18 +78,29 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
   const fresh = createBoard(givens);
   fresh.puzzleId = puzzleId;
 
-  if (typeof window === 'undefined' || !window.localStorage) {
+  if (typeof window === 'undefined') {
+    return fresh;
+  }
+
+  let storage: Storage | null = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    return fresh;
+  }
+
+  if (!storage) {
     return fresh;
   }
 
   try {
-    const raw = window.localStorage.getItem(storageKey(puzzleId));
+    const raw = storage.getItem(storageKey(puzzleId));
     if (!raw) return fresh;
 
     const parsed = JSON.parse(raw);
     const validated = validateStoredBoard(parsed, puzzleId);
     if (!validated) {
-      window.localStorage.removeItem(storageKey(puzzleId));
+      storage.removeItem(storageKey(puzzleId));
       return fresh;
     }
 
@@ -97,7 +108,7 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
       givens[i] === 0 ? true : cell.value === givens[i] && cell.isGiven,
     );
     if (!givensValid) {
-      window.localStorage.removeItem(storageKey(puzzleId));
+      storage.removeItem(storageKey(puzzleId));
       return fresh;
     }
 
@@ -105,7 +116,7 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
     return validated;
   } catch {
     try {
-      window.localStorage.removeItem(storageKey(puzzleId));
+      storage.removeItem(storageKey(puzzleId));
     } catch {
       /* ignore */
     }
@@ -114,19 +125,33 @@ export function loadBoard(puzzleId: string, givens: readonly SudokuDigit[]): Sud
 }
 
 export function saveBoard(board: SudokuBoard): void {
-  if (typeof window === 'undefined' || !window.localStorage) return;
+  if (typeof window === 'undefined') return;
+  let storage: Storage | null = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    return;
+  }
+  if (!storage) return;
   try {
     const toSave = { ...board, updatedAt: Date.now() };
-    window.localStorage.setItem(storageKey(board.puzzleId), JSON.stringify(toSave));
+    storage.setItem(storageKey(board.puzzleId), JSON.stringify(toSave));
   } catch {
     /* Storage full or unavailable - game continues without persistence */
   }
 }
 
 export function clearBoard(puzzleId: string): void {
-  if (typeof window === 'undefined' || !window.localStorage) return;
+  if (typeof window === 'undefined') return;
+  let storage: Storage | null = null;
   try {
-    window.localStorage.removeItem(storageKey(puzzleId));
+    storage = window.localStorage;
+  } catch {
+    return;
+  }
+  if (!storage) return;
+  try {
+    storage.removeItem(storageKey(puzzleId));
   } catch {
     /* ignore */
   }
