@@ -415,13 +415,14 @@ export class SudokuSolver {
   }
 }
 
-export function countSolutions(board: SudokuBoard, max = 2): number {
+export function countSolutions(board: SudokuBoard, max = 2, budget?: WorkBudget): number {
   if (max < 1) {
     throw new Error('max deve essere >= 1');
   }
   // Cap at 2 as per spec - we never need more than 2 to prove uniqueness
   const limit = Math.min(max, 2);
-  return solveExact(board, limit, new WorkBudget(Number.MAX_SAFE_INTEGER, 86400_000)).solutionCount;
+  const workBudget = budget ?? new WorkBudget(Number.MAX_SAFE_INTEGER, 86400_000);
+  return solveExact(board, limit, workBudget).solutionCount;
 }
 
 export function solve(board: SudokuBoard): SudokuBoard | null {
@@ -709,7 +710,7 @@ class SudokuGeneratorImpl {
           const previous = cells[cell];
           cells[cell] = 0;
           const board = new SudokuBoard(cells);
-          if (countSolutions(board, 2) !== 1) {
+          if (countSolutions(board, 2, budget) !== 1) {
             cells[cell] = previous;
             continue;
           }
@@ -826,7 +827,7 @@ class SudokuGeneratorImpl {
           const previous = cells[cell];
           cells[cell] = 0;
           const board = new SudokuBoard(cells);
-          if (countSolutions(board, 2) !== 1) {
+          if (countSolutions(board, 2, budget) !== 1) {
             cells[cell] = previous;
             continue;
           }
