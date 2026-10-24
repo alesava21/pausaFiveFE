@@ -76,3 +76,38 @@ test('Worker reale ignora la richiesta cancellata e restituisce il livello nuovo
   expect(state.puzzles[0].difficulty).toBe('MEDIUM');
   verifyPuzzle(state.puzzles[0]);
 });
+
+test('la misura rileva uno stallo main thread intenzionale durante la generazione', async ({
+  page,
+  browserName,
+}) => {
+  await page.goto('/__sudoku-engine/');
+  await expect(page.locator('#status')).toHaveText('Asset pronti');
+  await page.evaluate(() => {
+    document.querySelector('#generate')!.addEventListener(
+      'click',
+      () => {
+        const until = performance.now() + 80;
+        while (performance.now() < until) {
+          /* Deliberate negative control, test only. */
+        }
+      },
+      { once: true },
+    );
+  });
+  await page.getByRole('button', { name: 'Genera offline', exact: true }).click();
+  await expect(page.locator('#status')).toHaveText('Generazione offline completata');
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  const state = await page.evaluate(() => window.sudokuHarness);
+  expect(Math.max(...state.heartbeat)).toBeGreaterThan(50);
+  if (browserName === 'chromium')
+    expect(
+      state.longTasks.some((duration) => duration > 50),
+      JSON.stringify({ longTasks: state.longTasks, heartbeat: Math.max(...state.heartbeat) }),
+    ).toBe(true);
+});

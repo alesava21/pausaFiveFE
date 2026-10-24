@@ -65,7 +65,11 @@ if (state.longTaskSupported) {
     state.longTasks.push(
       ...list
         .getEntries()
-        .filter((entry) => entry.startTime >= measurementStart && entry.startTime <= measurementEnd)
+        .filter(
+          (entry) =>
+            entry.startTime + entry.duration > measurementStart &&
+            entry.startTime <= measurementEnd,
+        )
         .map((entry) => entry.duration),
     );
   }).observe({ type: 'longtask' });
