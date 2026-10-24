@@ -164,3 +164,23 @@ controllo. Pipeline Morph-it!, approvazioni e import PostgreSQL in
 
 Lo stato iniziale contiene zero soluzioni abilitate per scelta del proprietario:
 finché non vengono approvate, la UI mostra che le parole sono in preparazione.
+
+
+## Test Sudoku daily — TASK-021
+
+`npm run test:ci` include la suite DOM di SudokuDailyPage (Vitest/Angular
+zoneless con HTTP/CSRF reali e risposte controllate). Per i browser:
+
+```sh
+npm ci --no-audit --no-fund
+npm exec -- playwright install chromium webkit
+npm run build
+npm run test:e2e:types
+npm run test:e2e
+```
+
+Gli E2E servono la build statica su127.0.0.1:4307 con fixture di API simulate,
+senza DB o endpoint di test backend. Includono solving, refresh/note/undo,
+focus/click,422/409, rete e screenshot320px su Chromium/WebKit. Nessun retry
+automatico dei test. In CI il job E2E è parte del gate obbligatorio.
+Evidenze e limiti in [report UI](docs/TASK-021-UI-VERIFICATION.md).

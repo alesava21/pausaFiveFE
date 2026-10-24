@@ -1,0 +1,221 @@
+<div class="page-intro">
+  <p class="eyebrow">La tua pausa di logica</p>
+  <h1>{{ heading() }}</h1>
+  <p>{{ description() }}</p>
+</div>
+
+<section
+  class="sudoku-game"
+  aria-label="Partita Sudoku del giorno"
+  [attr.aria-busy]="busy() || verifyBusy()"
+>
+  @if (puzzleError(); as error) {
+    <div class="error-state">
+      <app-status-message [message]="error" tone="error" />
+      <app-button (activated)="open()">Riprova</app-button>
+    </div>
+  } @else if (puzzle(); as daily) {
+    <div class="game-header">
+      <div class="game-title">
+        <span class="brand">sudoku<span>del giorno.</span></span>
+        <span class="mode-badge">La sfida di oggi</span>
+      </div>
+      <div class="daily-timing" aria-live="off">
+        <span>Sfida del {{ daily.serverDate.split('-').reverse().join('/') }}</span>
+        <span>Nuova sfida alle {{ resetTime() }} (ora italiana)</span>
+        <span
+          >Tempo indicativo al reset: <strong>{{ countdown() }}</strong></span
+        >
+      </div>
+    </div>
+
+    @if (session(); as sess) {
+      @if (sess.status === 'ACTIVE' && !resetReached() && !result()) {
+        <div class="play-area">
+          <p aria-live="off">Tempo indicativo di gioco: {{ elapsed() }}</p>
+          <div class="board-wrap" #gridEl (keydown)="handleKeydown($event)" tabindex="0">
+            <div class="board" role="grid" aria-label="Griglia Sudoku 9 per 9">
+              @for (row of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track row) {
+                <div class="board-row" role="row">
+                  @for (col of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track col) {
+                    @let index = row * 9 + col;
+                    @let cell = board()!.cells[index];
+                    <button
+                      #cellEl
+                      type="button"
+                      role="gridcell"
+                      [attr.aria-selected]="selectedIndex() === index"
+                      [attr.aria-label]="
+                        cell.isGiven
+                          ? 'Indizio: ' + cell.value
+                          : 'Cella ' +
+                            (index + 1) +
+                            (cell.value ? ', valore ' + cell.value : ', vuota') +
+                            (cell.notes.length ? ', note: ' + cell.notes.join(', ') : '')
+                      "
+                      [class]="cellClasses(index)"
+                      [disabled]="busy() || verifyBusy() || resetReached() || result()"
+                      (click)="selectCell(index)"
+                      (focus)="selectedIndex.set(index)"
+                    >
+                      @if (cell.value !== 0) {
+                        <span class="cell-value" [class.given]="cell.isGiven">{{
+                          cell.value
+                        }}</span>
+                      } @else if (cell.notes.length) {
+                        <div class="cell-notes" aria-hidden="true">
+                          @for (n of digits; track n) {
+                            <span class="note" [class.active]="cell.notes.includes(n)">{{
+                              cell.notes.includes(n) ? n : ''
+                            }}</span>
+                          }
+                        </div>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="controls">
+            <div class="keypad" role="group" aria-label="Tastiera numeri 1-9">
+              @for (d of digits; track d) {
+                <button
+                  type="button"
+                  class="key"
+                  [class.pencil]="pencilMode()"
+                  [disabled]="
+                    busy() ||
+                    verifyBusy() ||
+                    resetReached() ||
+                    result() ||
+                    selectedIndex() === null ||
+                    board()?.cells[selectedIndex()!]?.isGiven
+                  "
+                  (click)="pencilMode() ? toggleNote(d) : setDigit(d)"
+                  [attr.aria-pressed]="pencilMode()"
+                >
+                  {{ d }}
+                </button>
+              }
+              <button
+                type="button"
+                class="key clear"
+                [disabled]="
+                  busy() ||
+                  verifyBusy() ||
+                  resetReached() ||
+                  result() ||
+                  selectedIndex() === null ||
+                  board()?.cells[selectedIndex()!]?.isGiven
+                "
+                (click)="clearCell()"
+                aria-label="Cancella"
+              >
+                ⌫
+              </button>
+            </div>
+
+            <div class="actions">
+              <button
+                type="button"
+                class="action-btn"
+                [disabled]="busy() || verifyBusy() || resetReached() || result()"
+                (click)="togglePencil()"
+                [attr.aria-pressed]="pencilMode()"
+                aria-label="{{ pencilMode() ? 'Disattiva modalità note' : 'Attiva modalità note' }}"
+              >
+                @if (pencilMode()) {
+                  <span>✏️ Note attive</span>
+                } @else {
+                  <span>✏️ Note</span>
+                }
+              </button>
+              <button
+                type="button"
+                class="action-btn"
+                [disabled]="busy() || verifyBusy() || resetReached() || result()"
+                (click)="undoMove()"
+                aria-label="Annulla ultima mossa (Ctrl+Z)"
+              >
+                ↶ Annulla
+              </button>
+            </div>
+          </div>
+
+          @if (showVerify()) {
+            <div class="verify-cta">
+              @if (pendingFinish()) {
+                <app-button
+                  variant="secondary"
+                  [busy]="verifyBusy()"
+                  (activated)="retryVerify()"
+                  [disabled]="!session() || session()?.status !== 'ACTIVE'"
+                >
+                  Riprova verifica
+                </app-button>
+                <p class="verify-hint">Invio precedente non confermato. Premi per riprovare.</p>
+              } @else {
+                <app-button
+                  variant="primary"
+                  [busy]="verifyBusy()"
+                  (activated)="verify()"
+                  [disabled]="!session() || session()?.status !== 'ACTIVE'"
+                >
+                  Verifica
+                </app-button>
+                <p class="verify-hint">
+                  La griglia è completa. Premi Verifica per inviare la soluzione al server.
+                </p>
+              }
+            </div>
+          }
+        </div>
+      } @else if (sess.status === 'EXPIRED' || (sess.status === 'ACTIVE' && resetReached())) {
+        <p role="status">È l'ora di una nuova sfida. Apri quella di oggi per continuare.</p>
+        <app-button [busy]="busy()" (activated)="open()">Apri la sfida di oggi</app-button>
+      } @else if (result()) {
+        <h2>Sudoku completato!</h2>
+        @if (result()?.elapsedSeconds === null) {
+          <p>Tempo finale non disponibile dopo il recupero della partita.</p>
+        } @else {
+          <p>Tempo server: {{ result()!.elapsedSeconds }} secondi</p>
+        }
+        <p>Torna domani per una nuova sfida.</p>
+      }
+    } @else {
+      <h2>{{ busy() || !ready() ? 'Prepariamo la partita…' : 'Partita non disponibile' }}</h2>
+      @if (ready() && !busy()) {
+        <app-button (activated)="open()">Riprova</app-button>
+      }
+    }
+
+    <app-status-message
+      [message]="message()"
+      [tone]="
+        message().includes('Non puoi') ||
+        message().includes('conflitti') ||
+        message().includes('corretta')
+          ? 'error'
+          : message().includes('scaduta') || message().includes('incerta')
+            ? 'warning'
+            : 'info'
+      "
+    />
+
+    @if (storageUnavailable()) {
+      <app-status-message
+        message="Lo storage del browser non è disponibile: la partita non verrà salvata alla chiusura della scheda."
+        tone="warning"
+      />
+    }
+  } @else {
+    <app-loading message="Carichiamo il Sudoku di oggi…" />
+  }
+
+  <nav class="game-links" aria-label="Altre modalità e regole">
+    <a routerLink="/sudoku-online">Sudoku illimitato (prossimamente)</a>
+    <a routerLink="/come-si-gioca">Come si gioca</a>
+  </nav>
+</section>
