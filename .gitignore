@@ -82,3 +82,5 @@ test-results/
 *.tsbuildinfo
 *.log
 *.pid
+
+/.angular/sudoku-harness/

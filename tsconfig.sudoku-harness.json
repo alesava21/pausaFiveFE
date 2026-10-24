@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": [], "lib": ["ES2022", "DOM"] },
+  "files": ["src/testing/sudoku-generator-harness.ts"],
+  "include": []
+}
