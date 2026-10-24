@@ -36,9 +36,9 @@ export class LogicalSolver {
       const col = cell % 9;
       const box = Math.floor(row / 3) * 3 + Math.floor(col / 3);
 
-      const rowOnly = candidates.filter(c => rows[row].has(c));
-      const colOnly = candidates.filter(c => cols[col].has(c));
-      const boxOnly = candidates.filter(c => boxes[box].has(c));
+      const rowOnly = candidates.filter((c) => rows[row].has(c));
+      const colOnly = candidates.filter((c) => cols[col].has(c));
+      const boxOnly = candidates.filter((c) => boxes[box].has(c));
 
       if (rowOnly.length > 1 && rowOnly.length < candidates.length) {
         for (const c of candidates) {
@@ -77,7 +77,7 @@ export class LogicalSolver {
       const candidates = board.candidates(cell);
       if (candidates.length !== 2) continue;
       const pairKey = candidates.sort().join(',');
-      seenPairs.set(pairKey, [...seenPairs.get(pairKey) || [], cell]);
+      seenPairs.set(pairKey, [...(seenPairs.get(pairKey) || []), cell]);
     }
 
     for (const [pairKey, cells] of seenPairs.entries()) {
@@ -103,7 +103,7 @@ export class LogicalSolver {
     board: SudokuBoard,
     maxWork: number = Number.MAX_SAFE_INTEGER,
     maxTime: number = 86400000,
-    startTime: number = Date.now()
+    startTime: number = Date.now(),
   ): boolean {
     const solution = new Array(81).fill(0);
     const initialDifficulty = 'EASY';
@@ -144,7 +144,7 @@ export class LogicalSolver {
         }
       }
 
-      return board.candidates(cell).filter(c => !used.has(c));
+      return board.candidates(cell).filter((c) => !used.has(c));
     };
 
     let cell = findEmptyCell();
@@ -156,12 +156,7 @@ export class LogicalSolver {
 
       for (const candidate of candidates) {
         solution[cell] = candidate;
-        const result = LogicalSolver.solve(
-          board,
-          maxWork,
-          maxTime,
-          startTime
-        );
+        const result = LogicalSolver.solve(board, maxWork, maxTime, startTime);
         if (result) {
           return true;
         }

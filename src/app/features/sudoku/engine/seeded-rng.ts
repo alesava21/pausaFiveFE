@@ -9,12 +9,7 @@ export class SeededRNG {
     const [a, b, c, d] = this.state;
     const t = a + b;
     const s = (c >>> 0) + d;
-    this.state = [
-      b ^ (b << 11),
-      (c ^ c >>> 3) >>> 0,
-      (d ^ d >>> 17) >>> 0,
-      a ^ s
-    ];
+    this.state = [b ^ (b << 11), (c ^ (c >>> 3)) >>> 0, (d ^ (d >>> 17)) >>> 0, a ^ s];
     return s >>> 0;
   }
 
@@ -23,7 +18,7 @@ export class SeededRNG {
   }
 
   nextFloat(): number {
-    return (this.next() >>> 0) / 0xFFFFFFFF;
+    return (this.next() >>> 0) / 0xffffffff;
   }
 
   shuffle<T>(array: T[]): T[] {
@@ -39,9 +34,9 @@ export class SeededRNG {
     seed = seed >>> 0;
     return [
       seed >>> 0,
-      (seed + 0x9E3779B9) >>> 0,
-      (seed * 0x85EBCA6B) >>> 0,
-      (seed * 0xC6BC279E) >>> 0
+      (seed + 0x9e3779b9) >>> 0,
+      (seed * 0x85ebca6b) >>> 0,
+      (seed * 0xc6bc279e) >>> 0,
     ];
   }
 }
