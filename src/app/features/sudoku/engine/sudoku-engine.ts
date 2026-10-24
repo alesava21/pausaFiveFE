@@ -26,8 +26,8 @@ export class SudokuBoard {
       throw new Error('La griglia deve contenere 81 celle.');
     }
     for (const v of cells) {
-      if (v < 0 || v > 9) {
-        throw new Error('Le celle devono contenere numeri da 0 a 9.');
+      if (!Number.isInteger(v) || v < 0 || v > 9) {
+        throw new Error('Le celle devono contenere numeri interi da 0 a 9.');
       }
     }
     this._cells = Object.freeze([...cells]);
