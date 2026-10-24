@@ -701,8 +701,8 @@ class SudokuGeneratorImpl {
         budget.tick();
         const solution = this.exactSolver.complete(rng, budget);
         const cells = solution.toArray();
-        const order = Array.from({ length: 81 }, (_, i) => i);
-        rng.shuffle(order);
+        let order = Array.from({ length: 81 }, (_, i) => i);
+        order = rng.shuffle(order);
 
         let clues = 81;
         for (const cell of order) {
@@ -750,9 +750,9 @@ class SudokuGeneratorImpl {
 
     // Verified fallback with deterministic relabeling per seed
     const fallback = FALLBACKS[difficulty];
-    const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const fallbackRng = new SeededRNG(seed);
-    fallbackRng.shuffle(digits);
+    digits = fallbackRng.shuffle(digits);
 
     const givensBoard = relabel(parseBoard(fallback.givens), digits);
     const solutionBoard = relabel(parseBoard(fallback.solution), digits);
@@ -818,8 +818,8 @@ class SudokuGeneratorImpl {
         budget.tick();
         const solution = this.exactSolver.complete(rng, budget);
         const cells = solution.toArray();
-        const order = Array.from({ length: 81 }, (_, i) => i);
-        rng.shuffle(order);
+        let order = Array.from({ length: 81 }, (_, i) => i);
+        order = rng.shuffle(order);
 
         let clues = 81;
         for (const cell of order) {
