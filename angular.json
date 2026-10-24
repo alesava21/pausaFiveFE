@@ -72,6 +72,22 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        },
+        "sudoku-harness": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/testing/sudoku-generator-harness.ts",
+            "tsConfig": "tsconfig.sudoku-harness.json",
+            "index": {
+              "input": "src/testing/sudoku-generator-harness.html",
+              "output": "index.html"
+            },
+            "outputPath": ".angular/sudoku-harness",
+            "assets": [],
+            "styles": [],
+            "optimization": false,
+            "sourceMap": true
+          }
         }
       }
     }

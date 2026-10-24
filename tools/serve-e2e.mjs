@@ -4,6 +4,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 
 const root = resolve('dist/PausaFiveFE/browser');
+const harnessRoot = resolve('.angular/sudoku-harness/browser');
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -17,8 +18,10 @@ await stat(resolve(root, 'sudoku-del-giorno/index.html'));
 const server = createServer(async (req, res) => {
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname);
-    let target = resolve(root, `.${path}`);
-    if (target !== root && !target.startsWith(root + sep)) throw new Error('Path');
+    const base = path.startsWith('/__sudoku-engine/') ? harnessRoot : root;
+    const relative = base === harnessRoot ? path.slice('/__sudoku-engine'.length) : path;
+    let target = resolve(base, `.${relative}`);
+    if (target !== base && !target.startsWith(base + sep)) throw new Error('Path');
     if ((await stat(target)).isDirectory()) target = resolve(target, 'index.html');
     const data = await readFile(target);
     res.writeHead(200, {
