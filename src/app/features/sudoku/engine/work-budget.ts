@@ -4,7 +4,7 @@ export class WorkBudget {
 
   constructor(
     private maxWork: number = Number.MAX_SAFE_INTEGER,
-    private maxTime: number = 86400000
+    private maxTime: number = 86400000,
   ) {}
 
   checkWork(work: number): boolean {
