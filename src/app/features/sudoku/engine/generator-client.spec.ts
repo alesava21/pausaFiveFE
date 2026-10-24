@@ -254,9 +254,17 @@ describe('SudokuGeneratorClient', () => {
     // Get the request ID (it's 1 for first request)
     client.cancel(1);
 
-    // Use Promise.resolve to defer rejection handling for synchronous rejections
-    await expect(Promise.resolve().then(() => promise)).rejects.toThrow(GeneratorError);
-    await expect(Promise.resolve().then(() => promise)).rejects.toMatchObject({
+    // The cancel() call synchronously rejects the promise via handler.reject().
+    // Use Promise.race to capture the rejection properly.
+    await expect(
+      Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 100)),
+      ]),
+    ).rejects.toThrow(GeneratorError);
+
+    // The original promise should also be rejected with CANCELLED
+    await expect(promise).rejects.toMatchObject({
       code: GeneratorErrorCode.CANCELLED,
     });
   });
@@ -265,7 +273,7 @@ describe('SudokuGeneratorClient', () => {
     const promise = client.generate(Difficulty.EASY, 12345);
     client.cancel(1);
 
-    // Handle the rejection to avoid unhandled rejection warning
+    // The promise is rejected synchronously; catch it to avoid unhandled rejection
     promise.catch(() => {});
 
     const messages = mockWorkerInstance!.getAllMessages();
