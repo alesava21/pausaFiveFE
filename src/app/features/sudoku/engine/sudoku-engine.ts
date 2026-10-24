@@ -65,13 +65,16 @@ export class SudokuBoard {
   }
 }
 
-/** Result of puzzle generation. */
-export interface SudokuPuzzle {
+/** Data-only DTO for worker serialization (no functions). */
+export interface SudokuPuzzleDTO {
   readonly givens: readonly number[];
   readonly solution: readonly number[];
   readonly difficulty: Difficulty;
   readonly fallback: boolean;
+}
 
+/** Result of puzzle generation with verification capability. */
+export interface SudokuPuzzle extends SudokuPuzzleDTO {
   verify(): void;
 }
 

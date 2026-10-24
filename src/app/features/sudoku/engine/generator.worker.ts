@@ -4,7 +4,7 @@
  * Pure TypeScript, no Angular dependencies.
  */
 
-import { Difficulty, generate, SudokuPuzzle, Limits } from './sudoku-engine';
+import { Difficulty, generate, SudokuPuzzleDTO, Limits } from './sudoku-engine';
 
 // Worker message protocol types
 export interface GenerateRequest {
@@ -16,7 +16,7 @@ export interface GenerateRequest {
 
 export interface GenerateResponse {
   readonly requestId: number;
-  readonly puzzle?: SudokuPuzzle;
+  readonly puzzle?: SudokuPuzzleDTO;
   readonly error?: string;
   readonly fallback?: boolean;
 }
@@ -56,10 +56,17 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     // Generate puzzle (synchronous in worker, but off main thread)
     try {
       const puzzle = generate(difficulty, seed, limits);
+      // Create data-only DTO for structured cloning (no functions)
+      const puzzleDTO: SudokuPuzzleDTO = {
+        givens: puzzle.givens,
+        solution: puzzle.solution,
+        difficulty: puzzle.difficulty,
+        fallback: puzzle.fallback,
+      };
       const response: GenerateResponse = {
         requestId,
-        puzzle,
-        fallback: puzzle.fallback,
+        puzzle: puzzleDTO,
+        fallback: puzzleDTO.fallback,
       };
       self.postMessage(response);
     } catch (error) {

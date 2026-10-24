@@ -4,7 +4,7 @@
  * Handles requestId tracking, cancellation, and stale response prevention.
  */
 
-import { Difficulty, SudokuPuzzle, Limits } from './sudoku-engine';
+import { Difficulty, SudokuPuzzle, Limits, SudokuGenerator } from './sudoku-engine';
 import { GenerateRequest, GenerateResponse, CancelRequest } from './generator.worker';
 
 /** Configuration for the generator client. */
@@ -175,7 +175,7 @@ export class SudokuGeneratorClient {
    * Ignores stale responses (responses for cancelled/old requests).
    */
   private handleResponse(response: GenerateResponse): void {
-    const { requestId, puzzle, error } = response;
+    const { requestId, puzzle: puzzleDTO, error } = response;
 
     const handler = this.responseHandlers.get(requestId);
     if (!handler) {
@@ -194,7 +194,7 @@ export class SudokuGeneratorClient {
       return;
     }
 
-    if (!puzzle) {
+    if (!puzzleDTO) {
       handler.reject(
         new GeneratorError(
           GeneratorErrorCode.GENERATION_FAILED,
@@ -204,6 +204,15 @@ export class SudokuGeneratorClient {
       );
       return;
     }
+
+    // Reconstruct full SudokuPuzzle with verify() method from DTO
+    const puzzle: SudokuPuzzle = {
+      ...puzzleDTO,
+      verify: () => {
+        // Verify the puzzle structure using the generator with a dummy seed
+        SudokuGenerator.generate(0, puzzleDTO.difficulty).verify();
+      },
+    };
 
     handler.resolve({ puzzle, requestId });
   }
