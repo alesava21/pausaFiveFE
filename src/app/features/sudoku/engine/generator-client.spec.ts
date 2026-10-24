@@ -254,15 +254,19 @@ describe('SudokuGeneratorClient', () => {
     // Get the request ID (it's 1 for first request)
     client.cancel(1);
 
-    await expect(promise).rejects.toThrow(GeneratorError);
-    await expect(promise).rejects.toMatchObject({
+    // Use Promise.resolve to defer rejection handling for synchronous rejections
+    await expect(Promise.resolve().then(() => promise)).rejects.toThrow(GeneratorError);
+    await expect(Promise.resolve().then(() => promise)).rejects.toMatchObject({
       code: GeneratorErrorCode.CANCELLED,
     });
   });
 
   it('sends cancel message to worker', async () => {
-    void client.generate(Difficulty.EASY, 12345);
+    const promise = client.generate(Difficulty.EASY, 12345);
     client.cancel(1);
+
+    // Handle the rejection to avoid unhandled rejection warning
+    promise.catch(() => {});
 
     const messages = mockWorkerInstance!.getAllMessages();
     const cancelMsg = messages.find(
