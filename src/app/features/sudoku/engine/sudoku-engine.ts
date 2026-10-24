@@ -125,11 +125,11 @@ export class SeededRNG {
     }
   }
 
-  /** Returns next random 64-bit integer. */
-  next(): number {
+  /** Returns next random 64-bit integer as bigint (full precision). */
+  nextBigInt(): bigint {
     const s0 = this.state[0];
     const s1 = this.state[1];
-    const result = Number((s0 + s1) & 0xffffffffffffffffn);
+    const result = (s0 + s1) & 0xffffffffffffffffn;
 
     const s1_new = s1 << 17n;
     this.state[2] ^= s0;
@@ -143,15 +143,20 @@ export class SeededRNG {
     return result;
   }
 
-  /** Returns random integer in [0, n). */
+  /** Returns next random 64-bit integer as number (loses precision, use nextBigInt() for full precision). */
+  next(): number {
+    return Number(this.nextBigInt());
+  }
+
+  /** Returns random integer in [0, n) using full 64-bit precision. */
   nextInt(n: number): number {
     if (n <= 0) throw new Error('Bound must be positive');
-    // Rejection sampling for unbiased result
+    // Rejection sampling for unbiased result using full 64-bit precision
     const max = 0x10000000000000000n; // 2^64
     const threshold = max - (max % BigInt(n));
     let x: bigint;
     do {
-      x = BigInt(this.next() >>> 0) | (BigInt(this.next() >>> 0) << 32n);
+      x = this.nextBigInt();
     } while (x >= threshold);
     return Number(x % BigInt(n));
   }
